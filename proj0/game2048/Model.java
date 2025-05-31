@@ -5,7 +5,7 @@ import java.util.Observable;
 
 
 /** The state of a game of 2048.
- *  @author TODO: YOUR NAME HERE
+ *  @author TODO: dhzp
  */
 public class Model extends Observable {
     /** Current contents of the board. */
@@ -138,6 +138,18 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        int i = 0;
+        int size = b.size();
+        while (i < size) {
+            int j = 0;
+            while (j < size) {
+                if (b.tile(i, j) == null) {
+                    return true;
+                }
+                j = j + 1;
+            }
+            i = i + 1;
+        }
         return false;
     }
 
@@ -148,6 +160,18 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        int i = 0;
+        int size = b.size();
+        while (i < size) {
+            int j = 0;
+            while (j < size) {
+                if (b.tile(i, j) != null && b.tile(i, j).value() == MAX_PIECE) {
+                    return true;
+                }
+                j = j + 1;
+            }
+            i = i + 1;
+        }
         return false;
     }
 
@@ -159,6 +183,22 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        if (Model.emptySpaceExists(b)) {
+            return true;
+        }
+        int i = 0;
+        int size = b.size();
+        while (i < size) {
+            int j = 0;
+            while (j < size) {
+                if (
+                        ((j+1) < size && b.tile(i, j).value() == b.tile(i, (j+1)).value()) ||
+                        ((i+1) < size && b.tile(i, j).value() == b.tile((i+1), j).value())
+                ) {return true;}
+                j = j + 1;
+            }
+            i = i + 1;
+        }
         return false;
     }
 
