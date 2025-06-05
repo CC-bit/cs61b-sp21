@@ -94,7 +94,7 @@ public class Model extends Observable {
         setChanged();
     }
 
-    /** Tilt the board toward SIDE. Return true iff this changes the board.
+    /** Tilt the board toward SIDE. Return true if this changes the board.
      *
      * 1. If two Tile objects are adjacent in the direction of motion and have
      *    the same value, they are merged into one Tile of twice the original
@@ -109,10 +109,37 @@ public class Model extends Observable {
     public boolean tilt(Side side) {
         boolean changed;
         changed = false;
-
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
+        int bSize = board.size();
+        for (int c = 0; c < bSize; c += 1) {
+            boolean upMerged = false;
+            for (int r = bSize - 2; r >= 0; r -= 1) { //the top row stays
+                Tile thisTile = board.tile(c, r);
+                if (thisTile == null) continue;
+                int upR;
+                for (upR = r + 1; upR < bSize; upR += 1) { //upR will be the unnull tile's row num or bSize
+                   Tile upTile = board.tile(c, upR);
+                   if (upTile != null) {
+                       if (!upMerged && upTile.value() == thisTile.value()) {
+                           score += 2 * board.tile(c, upR).value();
+                           upMerged = true;
+                           board.move(c, upR, thisTile);
+                           changed = true;
+                       } else if (upR - 1 != r) {
+                           board.move(c, upR - 1, thisTile);
+                           changed = true;
+                       }
+                       break;
+                   }
+                }
+                if (upR == bSize) {
+                    board.move(c, upR - 1, thisTile);
+                    changed = true;
+                }
+            }
+        }
 
         checkGameOver();
         if (changed) {
