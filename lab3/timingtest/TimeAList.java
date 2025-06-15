@@ -40,14 +40,11 @@ public class TimeAList {
     public static void timeAListConstruction() {
         // TODO: YOUR CODE HERE
         AList<Integer> tests= new AList<Integer>();
-        tests.addLast(1000);
-        tests.addLast(2000);
-        tests.addLast(4000);
-        tests.addLast(8000);
-        tests.addLast(16000);
-        tests.addLast(32000);
-        tests.addLast(64000);
-        tests.addLast(128000);
+        int n = 1000, rows = 8;
+        for (int i = 0; i < rows; i += 1) {
+            tests.addLast(n);
+            n *= 2;
+        }
 
         AList<Integer> Ns = new AList<Integer>();
         AList<Double> times = new AList<Double>();
