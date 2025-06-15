@@ -48,6 +48,7 @@ public class TimeAList {
         tests.addLast(32000);
         tests.addLast(64000);
         tests.addLast(128000);
+        tests.addLast(10000000);
 
         AList<Integer> Ns = new AList<Integer>();
         AList<Double> times = new AList<Double>();
