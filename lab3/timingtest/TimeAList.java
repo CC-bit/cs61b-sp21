@@ -5,6 +5,24 @@ import edu.princeton.cs.algs4.Stopwatch;
  * Created by hug.
  */
 public class TimeAList {
+    public int n;
+    public double time;
+    public int ops;
+    public TimeAList(int ops) {
+        this.n = ops;
+        this.ops = ops;
+        this.time = timer(ops);
+    }
+
+    public double timer(int ops) {
+        AList<Integer> test = new AList<Integer>();
+        Stopwatch sw = new Stopwatch();
+        for (int i = 0; i < ops; i += 1) {
+            test.addLast(1);
+        }
+        return sw.elapsedTime();
+    }
+
     private static void printTimingTable(AList<Integer> Ns, AList<Double> times, AList<Integer> opCounts) {
         System.out.printf("%12s %12s %12s %12s\n", "N", "time (s)", "# tests", "microsec/op");
         System.out.printf("------------------------------------------------------------\n");
@@ -17,25 +35,6 @@ public class TimeAList {
         }
     }
 
-    private static class DoOneTest{
-        public int n;
-        public double time;
-        public int ops;
-        public DoOneTest(int ops) {
-            this.ops= ops;
-            changeNandTime(ops);
-        }
-
-        private void changeNandTime(int ops) {
-            AList<Integer> test = new AList<Integer>();
-            Stopwatch sw = new Stopwatch();
-            for (int i = 0; i < ops; i += 1) {
-                test.addLast(1);
-            }
-            time = sw.elapsedTime();
-            n = test.size();
-        }
-    }
 
     public static void timeAListConstruction() {
         // TODO: YOUR CODE HERE
@@ -51,10 +50,10 @@ public class TimeAList {
         AList<Integer> opCount = new AList<Integer>();
 
         for (int i = 0; i < tests.size(); i += 1) {
-            DoOneTest doOne = new DoOneTest(tests.get(i));
-            Ns.addLast(doOne.n);
-            times.addLast(doOne.time);
-            opCount.addLast(doOne.ops);
+            TimeAList oneTest = new TimeAList(tests.get(i));
+            Ns.addLast(oneTest.n);
+            times.addLast(oneTest.time);
+            opCount.addLast(oneTest.ops);
         }
 
         printTimingTable(Ns, times, opCount);
