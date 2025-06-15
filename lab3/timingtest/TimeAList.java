@@ -6,7 +6,7 @@ import edu.princeton.cs.algs4.Stopwatch;
  */
 public class TimeAList {
     private static void printTimingTable(AList<Integer> Ns, AList<Double> times, AList<Integer> opCounts) {
-        System.out.printf("%12s %12s %12s %12s\n", "N", "time (s)", "# ops", "microsec/op");
+        System.out.printf("%12s %12s %12s %12s\n", "N", "time (s)", "# tests", "microsec/op");
         System.out.printf("------------------------------------------------------------\n");
         for (int i = 0; i < Ns.size(); i += 1) {
             int N = Ns.get(i);
@@ -17,11 +17,52 @@ public class TimeAList {
         }
     }
 
-    public static void main(String[] args) {
-        timeAListConstruction();
+    private static class DoOneTest{
+        public int n;
+        public double time;
+        public int ops;
+        public DoOneTest(int ops) {
+            this.ops= ops;
+            changeNandTime(ops);
+        }
+
+        private void changeNandTime(int ops) {
+            AList<Integer> test = new AList<Integer>();
+            Stopwatch sw = new Stopwatch();
+            for (int i = 0; i < ops; i += 1) {
+                test.addLast(1);
+            }
+            time = sw.elapsedTime();
+            n = test.size();
+        }
     }
 
     public static void timeAListConstruction() {
         // TODO: YOUR CODE HERE
+        AList<Integer> tests= new AList<Integer>();
+        tests.addLast(1000);
+        tests.addLast(2000);
+        tests.addLast(4000);
+        tests.addLast(8000);
+        tests.addLast(16000);
+        tests.addLast(32000);
+        tests.addLast(64000);
+        tests.addLast(128000);
+
+        AList<Integer> Ns = new AList<Integer>();
+        AList<Double> times = new AList<Double>();
+        AList<Integer> opCount = new AList<Integer>();
+
+        for (int i = 0; i < tests.size(); i += 1) {
+            DoOneTest doOne = new DoOneTest(tests.get(i));
+            Ns.addLast(doOne.n);
+            times.addLast(doOne.time);
+            opCount.addLast(doOne.ops);
+        }
+
+        printTimingTable(Ns, times, opCount);
+
     }
+
+    public static void main(String[] args) {timeAListConstruction();}
 }
