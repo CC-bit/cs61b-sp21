@@ -7,14 +7,13 @@ import static org.junit.Assert.*;
 /** Performs some basic linked list tests. */
 public class LinkedListDequeTest {
 
-    @Test
     /** Adds a few things to the list, checking isEmpty() and size() are correct,
      * finally printing the results.
-     *
      * && is the "and" operation. */
+    @Test
     public void addIsEmptySizeTest() {
 
-        LinkedListDeque<String> lld1 = new LinkedListDeque<String>();
+        LinkedListDeque<String> lld1 = new LinkedListDeque<>();
 
 		assertTrue("A newly initialized LLDeque should be empty", lld1.isEmpty());
 		lld1.addFirst("front");
@@ -34,11 +33,11 @@ public class LinkedListDequeTest {
 		lld1.printDeque();
     }
 
-    @Test
     /** Adds an item, then removes an item, and ensures that dll is empty afterwards. */
+    @Test
     public void addRemoveTest() {
 
-        LinkedListDeque<Integer> lld1 = new LinkedListDeque<Integer>();
+        LinkedListDeque<Integer> lld1 = new LinkedListDeque<>();
 		// should be empty
 		assertTrue("lld1 should be empty upon initialization", lld1.isEmpty());
 
@@ -51,8 +50,8 @@ public class LinkedListDequeTest {
 		assertTrue("lld1 should be empty after removal", lld1.isEmpty());
     }
 
+    /** Tests removing from an empty deque */
     @Test
-    /* Tests removing from an empty deque */
     public void removeEmptyTest() {
 
         LinkedListDeque<Integer> lld1 = new LinkedListDeque<>();
@@ -71,13 +70,13 @@ public class LinkedListDequeTest {
         assertEquals(errorMsg, 0, size);
     }
 
+    /** Check if you can create LinkedListDeques with different parameterized types*/
     @Test
-    /* Check if you can create LinkedListDeques with different parameterized types*/
     public void multipleParamTest() {
 
-        LinkedListDeque<String>  lld1 = new LinkedListDeque<String>();
-        LinkedListDeque<Double>  lld2 = new LinkedListDeque<Double>();
-        LinkedListDeque<Boolean> lld3 = new LinkedListDeque<Boolean>();
+        LinkedListDeque<String>  lld1 = new LinkedListDeque<>();
+        LinkedListDeque<Double>  lld2 = new LinkedListDeque<>();
+        LinkedListDeque<Boolean> lld3 = new LinkedListDeque<>();
 
         lld1.addFirst("string");
         lld2.addFirst(3.14159);
@@ -88,11 +87,11 @@ public class LinkedListDequeTest {
         boolean b = lld3.removeFirst();
     }
 
+    /** check if null is return when removing from an empty LinkedListDeque. */
     @Test
-    /* check if null is return when removing from an empty LinkedListDeque. */
     public void emptyNullReturnTest() {
 
-        LinkedListDeque<Integer> lld1 = new LinkedListDeque<Integer>();
+        LinkedListDeque<Integer> lld1 = new LinkedListDeque<>();
 
         boolean passed1 = false;
         boolean passed2 = false;
@@ -101,11 +100,11 @@ public class LinkedListDequeTest {
 
     }
 
+    /** Add large number of elements to deque; check if order is correct. */
     @Test
-    /* Add large number of elements to deque; check if order is correct. */
     public void bigLLDequeTest() {
 
-        LinkedListDeque<Integer> lld1 = new LinkedListDeque<Integer>();
+        LinkedListDeque<Integer> lld1 = new LinkedListDeque<>();
         for (int i = 0; i < 1000000; i++) {
             lld1.addLast(i);
         }
