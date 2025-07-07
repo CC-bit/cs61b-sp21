@@ -3,7 +3,7 @@ package deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class LinkedListDeque<T> implements Deque<T>{
+public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     private final Node sentinel;
     private int size;
 
@@ -184,17 +184,6 @@ public class LinkedListDeque<T> implements Deque<T>{
             j++;
         }
         return true;
-        /* Node p = sentinel.next;
-        int i = 0;
-        while (p != sentinel) {
-            if (!(that.get(i).equals(p.item))) {
-                return false;
-            }
-            i += 1;
-            p = p.next;
-        }
-        return true;
-         */
     }
 
     /** Double ended node with prev node, item, next node in it. */
