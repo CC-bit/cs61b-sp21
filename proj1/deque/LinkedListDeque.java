@@ -1,6 +1,7 @@
 package deque;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     private final Node sentinel;
@@ -107,7 +108,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         for (int i = 0; i != index; i += 1) {
             p = p.next;
         }
-        return p.item; //p may be the node at index or sentinel. Both works.
+        return p.item; //P may be the node at index or sentinel. Both work.
     }
 
     /** Same as get, but uses recursion. */
@@ -151,7 +152,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
 
         public T next() {
             if (!hasNext()) {
-                return null;
+                throw new NoSuchElementException();
             }
             position = position.next;
             return position.item;
