@@ -1,7 +1,6 @@
 package deque;
 
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 
 public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     private T[] items;
@@ -197,7 +196,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
 
         public T next() {
             if (!hasNext()) {
-                throw new NoSuchElementException("No more item");
+                return null;
             }
             int i = position;
             position++;
