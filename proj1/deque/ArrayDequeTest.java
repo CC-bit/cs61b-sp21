@@ -21,7 +21,7 @@ public class ArrayDequeTest {
 		lld1.addFirst("front");
 
 		// The && operator is the same as "and" in Python.
-		// It's a binary operator that returns true if both arguments true, and false otherwise.
+		// It's a binary operator that returns true if both arguments are true, and false otherwise.
         assertEquals(1, lld1.size());
         assertFalse("lld1 should now contain 1 item", lld1.isEmpty());
 
@@ -101,7 +101,7 @@ public class ArrayDequeTest {
 
     }
 
-    /** Add large number of elements to deque; check if order is correct. */
+    /** Add a large number of elements to deque; check if order is correct. */
     @Test
     public void bigLLDequeTest() {
 
@@ -130,8 +130,8 @@ public class ArrayDequeTest {
     }
 
     /** Make a bunch of operations, each of them randomly.
-     *  Check if both LinkedListDeque and ArrayDeque behavior the same.
-     *  Finally print the deque. */
+     *  Check if both LinkedListDeque and ArrayDeque behave the same.
+     *  Finally, print the deque. */
     @Test
     public void randomizedTest() {
         LinkedListDeque<Integer> linkList = new LinkedListDeque<>();

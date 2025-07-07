@@ -6,7 +6,7 @@ import java.util.NoSuchElementException;
 public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     private T[] items;
     private final double r;
-    private int front; // The index of first item in array.
+    private int front; // The index of the first item in the array.
     private int size;
 
     public ArrayDeque() {
@@ -32,14 +32,14 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         return number;
     }
 
-    /** Returns the number of items from 0 of array to back of deque.
+    /** Returns the number of items from 0 of the array to back of deque.
      *  Returns 0 if not circular.
      */
     private int numZeroToBack() {
         return size - numFrontToEnd();
     }
 
-    /** Returns the array index of back item of deque. */
+    /** Returns the array index of back item. */
     private int backIndex() {
         int index;
         if (isCircular(size)) {
@@ -63,13 +63,14 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         return newIndex;
     }
 
-    /** Resize array to the size of capacity.
-     *  first item in index 0.
+    /** Resize the array to the size of capacity.
+     *  The first item is in index 0.
      */
     private void resize(int capacity) {
         T[] a = (T[]) new Object[capacity];
-        System.arraycopy(items, front, a, 0, numFrontToEnd());
-        System.arraycopy(items, 0, a, numFrontToEnd(), numZeroToBack());
+        int num = numFrontToEnd();
+        System.arraycopy(items, front, a, 0, num);
+        System.arraycopy(items, 0, a, num, size - num);
         front = 0;
         items = a;
     }
@@ -131,8 +132,8 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
             System.out.println("ArrayDeque removeFirst: No such item exists.");
             return null;
         }
-        if (size - 1 < items.length * r) {
-            resize(size * 2);
+        if (items.length >= 16 && size - 1 < items.length * r) {
+            resize(items.length / 2);
         }
         T item = items[front];
         items[front] = null;
@@ -150,11 +151,12 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
             System.out.println("ArrayDeque removeLast: No such item exists.");
             return null;
         }
-        if (size - 1 < items.length * r) {
-            resize(size * 2);
+        if (items.length >= 16 && size - 1 < items.length * r) {
+            resize(items.length / 2);
         }
-        T item = items[backIndex()];
-        items[backIndex()] = null;
+        int index = backIndex();
+        T item = items[index];
+        items[index] = null;
         size -= 1;
         return item;
     }
