@@ -120,6 +120,15 @@ public class ArrayDequeTest {
 
     }
 
+    /** Run randomizedTest many times. */
+    @Test
+    public void manyRandom() {
+        int times = 200;
+        for (int i = 0; i < times; i++) {
+            randomizedTest();
+        }
+    }
+
     /** Make a bunch of operations, each of them randomly.
      *  Check if both LinkedListDeque and ArrayDeque behavior the same.
      *  Finally print the deque. */
@@ -128,9 +137,9 @@ public class ArrayDequeTest {
         LinkedListDeque<Integer> linkList = new LinkedListDeque<>();
         ArrayDeque<Integer> arrayList = new ArrayDeque<>();
 
-        int N = 600000;
+        int N = 700000;
         for (int i = 0; i < N; i += 1) {
-            int operationNumber = StdRandom.uniform(0, 6);
+            int operationNumber = StdRandom.uniform(0, 7);
             if (operationNumber == 0) {
                 //addFirst
                 int randVal = StdRandom.uniform(0, 100);
@@ -159,8 +168,16 @@ public class ArrayDequeTest {
                 assertEquals(linkList.removeLast(), arrayList.removeLast());
             } else if (operationNumber == 6) {
                 // get
-                int randIndex = StdRandom.uniform(0, linkList.size() - 1);
-                assertEquals(linkList.get(randIndex), arrayList.get(randIndex));
+                if (linkList.size() > 1) {
+                    int randIndex = StdRandom.uniform(0, linkList.size() - 1);
+                    assertEquals(linkList.get(randIndex), arrayList.get(randIndex));
+                }
+            } else if (operationNumber == 7) {
+                //equals
+                if (!(arrayList.isEmpty())) {
+                    assertTrue("The two deque should be equal", arrayList.equals(linkList));
+                    assertTrue("The two deque should be equal", linkList.equals(arrayList));
+                }
             }
         }
         System.out.println("LinkedListDeque: ");

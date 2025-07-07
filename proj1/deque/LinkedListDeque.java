@@ -1,5 +1,8 @@
 package deque;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 public class LinkedListDeque<T> implements Deque<T>{
     private final Node sentinel;
     private int size;
@@ -130,18 +133,58 @@ public class LinkedListDeque<T> implements Deque<T>{
         return getHelper(k - 1, p.next);
     }
 
+    /** Returns an iterator. */
+    @Override
+    public Iterator<T> iterator() {
+        return new LinkDequeIterator();
+    }
+
+    /** Iterator for LinkedListDeque. */
+    private class LinkDequeIterator implements Iterator<T> {
+        private Node position;
+
+        public LinkDequeIterator() {
+            position = sentinel;
+        }
+        public boolean hasNext() {
+            return !(position.next == sentinel);
+        }
+
+        public T next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("No more item.");
+            }
+            position = position.next;
+            return position.item;
+        }
+    }
+
     /** Returns whether the parameter o is equal to the Deque. */
+    @Override
     public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
         if (!(o instanceof LinkedListDeque)) {
             return false;
         }
 
-        LinkedListDeque<?> that = (LinkedListDeque<?>) o;
+        Deque<T> that = (Deque<T>) o;
         if (that.size() != size) {
             return false;
         }
-
-        Node p = sentinel.next;
+        int j = 0;
+        for (T i : this) {
+            if (!(that.get(j).equals(i))) {
+                return false;
+            }
+            j++;
+        }
+        return true;
+        /* Node p = sentinel.next;
         int i = 0;
         while (p != sentinel) {
             if (!(that.get(i).equals(p.item))) {
@@ -151,6 +194,7 @@ public class LinkedListDeque<T> implements Deque<T>{
             p = p.next;
         }
         return true;
+         */
     }
 
     /** Double ended node with prev node, item, next node in it. */

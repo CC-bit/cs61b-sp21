@@ -1,9 +1,12 @@
 package deque;
 
-public class ArrayDeque<T> implements Deque<T>{
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
+public class ArrayDeque<T> implements Deque<T> {
     private T[] items;
     private final double r;
-    private int front;
+    private int front; // The index of first item in array.
     private int size;
 
     public ArrayDeque() {
@@ -47,7 +50,7 @@ public class ArrayDeque<T> implements Deque<T>{
         return index;
     }
 
-    /** Returns the correct array index weather the given index is correct. */
+    /** Returns the correct array index according to the deque index. */
     private int arrayIndex(int index) {
         int newIndex;
         if (index < 0) {
@@ -170,5 +173,60 @@ public class ArrayDeque<T> implements Deque<T>{
             return null;
         }
         return items[arrayIndex(front + index)];
+    }
+
+    /** Returns an iterator. */
+    @Override
+    public Iterator<T> iterator() {
+        return new arrayDequeIterator();
+    }
+
+    /** Iterator for ArrayDeque. */
+    private class arrayDequeIterator implements Iterator<T> {
+        private int position;
+
+        public arrayDequeIterator() {
+            position = 0;
+        }
+
+        public boolean hasNext() {
+            return position < size;
+        }
+
+        public T next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("No more item");
+            }
+            int i = position;
+            position++;
+            return get(i);
+        }
+    }
+
+    /** Returns whether the parameter o is equal to the Deque. */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
+        if (!(o instanceof ArrayDeque)) {
+            return false;
+        }
+
+        Deque<T> that = (Deque<T>) o;
+        if (that.size() != size) {
+            return false;
+        }
+        int j = 0;
+        for (T i : this) {
+            if (!(that.get(j).equals(i))) {
+                return false;
+            }
+            j++;
+        }
+        return true;
     }
 }
