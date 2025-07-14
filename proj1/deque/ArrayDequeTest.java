@@ -120,13 +120,20 @@ public class ArrayDequeTest {
 
     }
 
-    /** Run randomizedTest many times. */
+    /** Check if two kinds of deque with same elements equals. */
     @Test
-    public void manyRandom() {
-        int times = 200;
-        for (int i = 0; i < times; i++) {
-            randomizedTest();
+    public void checkEquals() {
+        LinkedListDeque<Integer> linkList = new LinkedListDeque<>();
+        ArrayDeque<Integer> arrayList = new ArrayDeque<>();
+
+        for (int i = 0; i < 10; i++) {
+            linkList.addFirst(2);
+            arrayList.addFirst(2);
+
         }
+
+        assertEquals(linkList, arrayList);
+
     }
 
     /** Make a bunch of operations, each of them randomly.
@@ -139,7 +146,7 @@ public class ArrayDequeTest {
 
         int N = 700000;
         for (int i = 0; i < N; i += 1) {
-            int operationNumber = StdRandom.uniform(0, 7);
+            int operationNumber = StdRandom.uniform(0, 8);
             if (operationNumber == 0) {
                 //addFirst
                 int randVal = StdRandom.uniform(0, 100);
@@ -175,8 +182,8 @@ public class ArrayDequeTest {
             } else if (operationNumber == 7) {
                 //equals
                 if (!(arrayList.isEmpty())) {
-                    assertTrue("The two deque should be equal", arrayList.equals(linkList));
-                    assertTrue("The two deque should be equal", linkList.equals(arrayList));
+                    assertEquals(arrayList, linkList);
+                    assertEquals(linkList, arrayList);
                 }
             }
         }

@@ -14,11 +14,6 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         size = 0;
     }
 
-    public LinkedListDeque(T x) {
-        this();
-        addFirst(x);
-    }
-
     /** Adds an item of type T to the front of the deque. */
     @Override
     public void addFirst(T item) {
@@ -31,12 +26,6 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     public void addLast(T item) {
         size += 1;
         new Node(sentinel.prev, item, sentinel);
-    }
-
-    /** Returns true if deque is empty, false otherwise. */
-    @Override
-    public boolean isEmpty() {
-        return size == 0;
     }
 
     /** Return the number of items in the deque. */
@@ -143,7 +132,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     private class LinkDequeIterator implements Iterator<T> {
         private Node position;
 
-        public LinkDequeIterator() {
+        LinkDequeIterator() {
             position = sentinel;
         }
         public boolean hasNext() {
@@ -168,7 +157,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         if (o == null) {
             return false;
         }
-        if (!(o instanceof LinkedListDeque)) {
+        if (!(o instanceof Deque)) {
             return false;
         }
 
@@ -187,12 +176,12 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     /** Double ended node with prev node, item, next node in it. */
-    public class Node {
-        public Node prev;
-        public T item;
-        public Node next;
+    private class Node {
+        private Node prev;
+        private T item;
+        private Node next;
 
-        public Node(Node p, T i, Node n) {
+        Node(Node p, T i, Node n) {
             prev = p;
             item = i;
             next = n;

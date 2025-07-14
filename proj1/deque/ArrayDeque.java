@@ -16,9 +16,10 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         size = 0;
     }
 
-    /** Returns true if the array with size items is circular - the index of back item isn't after that of front. */
-    private boolean isCircular(int size) {
-        return front + size > items.length; // front + size - 1 > items.length - 1
+    /** Returns true if the array with size items is circular
+     *  - the index of back item isn't after that of front. */
+    private boolean isCircular(int len) {
+        return front + len > items.length; // front + size - 1 > items.length - 1
     }
 
     /** Returns the number of items from front of deque to the end of array. */
@@ -180,14 +181,14 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     /** Returns an iterator. */
     @Override
     public Iterator<T> iterator() {
-        return new arrayDequeIterator();
+        return new ArrayDequeIterator();
     }
 
     /** Iterator for ArrayDeque. */
-    private class arrayDequeIterator implements Iterator<T> {
+    private class ArrayDequeIterator implements Iterator<T> {
         private int position;
 
-        public arrayDequeIterator() {
+        ArrayDequeIterator() {
             position = 0;
         }
 
@@ -214,7 +215,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         if (o == null) {
             return false;
         }
-        if (!(o instanceof ArrayDeque)) {
+        if (!(o instanceof Deque)) {
             return false;
         }
 
