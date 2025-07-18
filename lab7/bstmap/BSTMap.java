@@ -1,6 +1,7 @@
 package bstmap;
 
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -47,34 +48,26 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K , V> {
         return size;
     }
 
+    /** Insert a node into the current tree. Returns the new tree. */
+    private Node insert(Node n, K key, V value) {
+        if (n == null) {
+            return new Node(key, value);
+        }
+        if (key.compareTo(n.key) == 0) {
+            n.value = value;
+            size--; // Insert value into an exist node, size--.
+        } else if (key.compareTo(n.key) < 0) {
+            n.left = insert(n.left, key, value);
+        } else {
+            n.right = insert(n.right, key, value);
+        }
+        return n;
+    }
+
     @Override
     public void put(K key, V value) {
-        size++;
-        if (root == null) {
-            root = new Node(key, value);
-            return;
-        }
-        Node p = root;
-        Node item = new Node(key, value);
-        while (true) {
-            if (key.compareTo(p.key) == 0) {
-                p.value = value;
-                size--;
-                return;
-            } else if (key.compareTo(p.key) < 0) {
-                if (p.left == null) {
-                    p.left = item;
-                    return;
-                }
-                p = p.left;
-            } else {
-                if (p.right == null) {
-                    p.right = item;
-                    return;
-                }
-                p = p.right;
-            }
-        }
+        size++; // If insert value into an exist node, then size--.
+        root = insert(root, key, value);
     }
 
     @Override
