@@ -15,7 +15,7 @@ public class SpeedTest {
     public void test() throws IOException {
         int L = 2;
         int N = 100000;
-        File result = new File("bstmap/speedTestResults.txt");
+        File result = new File("speedTestResults.txt");
         StringBuilder sb = new StringBuilder();
         sb.append("Time needed to put N random strings of length 2 into map.\n\n")
                 .append("N       BSTMap    TreeMap    HashMap\n");
