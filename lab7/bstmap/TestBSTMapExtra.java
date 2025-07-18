@@ -3,10 +3,23 @@ package bstmap;
 import java.util.Set;
 import java.util.HashSet;
 import static org.junit.Assert.*;
+
+import edu.princeton.cs.algs4.StdRandom;
 import org.junit.Test;
 
 /** Tests of optional parts of lab 7. */
 public class TestBSTMapExtra {
+
+    /** Test for print. */
+    @Test
+    public void printTest() {
+        BSTMap<Integer, Integer> bst = new BSTMap<>();
+        for (int i = 0; i < 20; i++) {
+            int key = StdRandom.uniform(0, 100);
+            bst.put(key, 2);
+        }
+        bst.printInOrder();
+    }
 
     /*
     * Sanity test for keySet, only here because it's optional

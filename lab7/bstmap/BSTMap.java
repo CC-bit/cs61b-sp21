@@ -2,6 +2,7 @@ package bstmap;
 
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 public class BSTMap<K extends Comparable<K>, V> implements Map61B<K , V> {
@@ -73,6 +74,15 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K , V> {
         root = insert(root, key, value);
     }
 
+    /** Prints out the map in order of increasing key. */
+    public void printInOrder() {
+        StringBuilder sb = new StringBuilder();
+        for (K item : this) {
+            sb.append(item.toString()).append(" ");
+        }
+        System.out.println(sb);
+    }
+
     @Override
     public Set<K> keySet() {
         throw new UnsupportedOperationException();
@@ -84,6 +94,7 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K , V> {
         if (p == null) {
             return null;
         }
+        size--;
         V removedValue = p.value;
 
         if (p.left != null && p.right != null) {
@@ -148,18 +159,23 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K , V> {
 
         @Override
         public K next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
             K iterKey = p.key;
-            size--;
+            iterSize--;
             if (p.right != null) {
                 p = p.right;
                 while (p.left != null) {
                     p = p.left;
                 }
             } else {
-                while (p.parent.key.compareTo(iterKey) < 0) {
+                while (p.parent != null && p.parent.key.compareTo(iterKey) < 0) {
                     p = p.parent;
                 }
-                p = p.parent;
+                if (p.parent != null) {
+                    p = p.parent;
+                }
             }
             return iterKey;
         }
