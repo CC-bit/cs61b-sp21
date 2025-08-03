@@ -1,11 +1,11 @@
 package gitlet;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
-import static gitlet.Utils.*;
+import static gitlet.Utils.readObject;
+import static gitlet.Utils.writeObject;
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author dhzp
@@ -16,7 +16,8 @@ public class Main {
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
     public static void main(String[] args) throws IOException {
-        if (args.length == 0) {
+        int l = args.length;
+        if (l == 0) {
             System.out.println("Please enter a command.");
             System.exit(0);
         }
@@ -47,24 +48,44 @@ public class Main {
                 break;
             case "log":
                 validateNumArgs(args, 1);
+                Repository.log();
                 break;
             case "global-log":
                 validateNumArgs(args, 1);
+                Repository.globalLog();
                 break;
             case "find":
                 validateNumArgs(args, 2);
+                Repository.find(args[1]);
                 break;
             case "status":
                 validateNumArgs(args, 1);
+                Repository.status();
             case "checkout":
+                validateNumArgs(args, 2, 3, 4);
+                if (l == 2) {
+                    Repository.checkout(args[1]);
+                } else if (l == 3) {
+                    Repository.checkout("--", args[2]);
+                } else {
+                    Repository.checkout(args[1], "--", args[3]);
+                }
                 break;
             case "branch":
+                validateNumArgs(args, 2);
+                Repository.branch(args[1]);
                 break;
             case "rm-branch":
+                validateNumArgs(args, 2);
+                Repository.rmBranch(args[1]);
                 break;
             case "reset":
+                validateNumArgs(args, 2);
+                Repository.reset(args[1]);
                 break;
             case "merge":
+                validateNumArgs(args, 2);
+                Repository.merge(args[1]);
                 break;
             default:
                 validateNumArgs(args, -1);
@@ -78,18 +99,21 @@ public class Main {
      * print a message if they do not match.
      *
      * @param args Argument array from command line
-     * @param n Number of expected arguments, treat -1 as invalid command name.
+     * @param numbs Number of expected arguments, treat -1 as invalid command name.
      */
-    private static void validateNumArgs(String[] args, int n) {
+    private static void validateNumArgs(String[] args, int... numbs) {
         int l = args.length;
         if (l == 0) {
             System.out.println("Please enter a command.");
-        } else if (n == -1) {
+        } else if (numbs[0] == -1) {
             System.out.println("No command with that name exists.");
-        } else if (l != n) {
-            System.out.println("Incorrect operands.");
         } else {
-            return;
+            for (int n : numbs) {
+                if (l == n) {
+                    return;
+                }
+            }
+            System.out.println("Incorrect operands.");
         }
         System.exit(0);
     }
@@ -103,13 +127,6 @@ public class Main {
         } else {
             Repository.pointer = new TreeMap<>();
         }
-        if (Stage.STAGEAD.exists()) {
-            @SuppressWarnings("unchecked")
-            TreeMap<String, String> loadedPointer1 = readObject(Stage.STAGEAD, TreeMap.class);
-            Stage.stageAd = loadedPointer1;
-        } else {
-            Stage.stageAd = new TreeMap<>();
-        }
         if (Stage.STAGERM.exists()) {
             @SuppressWarnings("unchecked")
             ArrayList<String> loadedPointer2 = readObject(Stage.STAGERM, ArrayList.class);
@@ -122,8 +139,6 @@ public class Main {
     /** Save app state to file. */
     private static void saveState() {
         writeObject(Repository.POINTER, Repository.pointer);
-        writeObject(Stage.STAGEAD, Stage.stageAd);
         writeObject(Stage.STAGERM, Stage.stageRm);
     }
-
 }
