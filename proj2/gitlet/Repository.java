@@ -1,17 +1,15 @@
 package gitlet;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TreeMap;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import static gitlet.Utils.*;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 // TODO: any imports you need here
 
@@ -24,19 +22,22 @@ import static gitlet.Utils.*;
 public class Repository {
 
     /** The current working directory. */
-    public static final File CWD = new File(System.getProperty("user.dir"));
+    public static final Path CWD = Paths.get(System.getProperty("user.dir"));
     /** The .gitlet directory. */
-    public static final File GITLET_DIR = join(CWD, ".gitlet");
+    public static final Path GITLET_DIR = CWD.resolve(".gitlet");
     /** The staging area. */
-    public static final File STAGE_DIR = join(GITLET_DIR, "stage");
+    public static final Path STAGE_DIR = GITLET_DIR.resolve("stage");
     /** The blob directory. */
-    public static final File BLOB_DIR = join(GITLET_DIR, "blob");
+    public static final Path BLOB_DIR = GITLET_DIR.resolve("blob");
     /** The commit directory. */
-    public static final File COMMIT_DIR = join(GITLET_DIR, "commit");
+    public static final Path COMMIT_DIR = GITLET_DIR.resolve("commit");
     /** The pointer file. */
-    public static final File POINTER = join(GITLET_DIR, "pointer");
+    public static final Path POINTER = GITLET_DIR.resolve("pointer");
     /** A map of pointer name like "master" to commit hash. */
     public static TreeMap<String, String> pointer;
+
+    public static final Path STAGERM = GITLET_DIR.resolve("stageRm");
+    public static ArrayList<String> stageRm;
 
     /**
      * Does required filesystem operations to allow for persistence.
@@ -47,16 +48,16 @@ public class Repository {
      *    - commit/ -- folder containing all the persistent data for commits
      */
     public static void init() throws IOException {
-        if (GITLET_DIR.exists()) {
+        if (Files.exists(GITLET_DIR)) {
             System.out.println(
                     "A Gitlet version-control system already exists in the current directory."
             );
             System.exit(0);
         }
-        GITLET_DIR.mkdir();
-        STAGE_DIR.mkdir();
-        BLOB_DIR.mkdir();
-        COMMIT_DIR.mkdir();
+        Files.createDirectory(GITLET_DIR);
+        Files.createDirectory(STAGE_DIR);
+        Files.createDirectory(BLOB_DIR);
+        Files.createDirectory(COMMIT_DIR);
         Commit initCommit = new Commit();
         String initHash = initCommit.getHash();
         pointer.put("initCommit", initHash);
@@ -72,19 +73,19 @@ public class Repository {
      * If the file is staged for rm before add, cancel the stage for rm.
      */
     public static void add(String fileName) throws IOException {
-        File f = join(CWD, fileName);
-        if (!f.exists()) {
+        Path filePath = CWD.resolve(fileName);
+        if (!Files.exists(filePath)) {
             System.out.println("File does not exist.");
             System.exit(0);
         }
-        String fileHash = Utils.sha1((Object) readContents(f));
+        String fileHash = Utils.sha1((Object) readContents(filePath));
         String fileHashCommit = getCommit("head").getFileHash(fileName);
         if (Objects.equals(fileHash, fileHashCommit)) {
-            Stage.rm(fileName);
+            rmStage(fileName);
             return;
         }
-        Stage.add(fileName);
-        Stage.stageRm.remove(fileName);
+        addStage(fileName);
+        stageRm.remove(fileName);
     }
 
     /**
@@ -93,16 +94,16 @@ public class Repository {
      * Untracking files in stageRm area.
      */
     public static void commit(String msg) throws IOException {
-        if (Stage.isEmpty() && Stage.stageRm.isEmpty()) {
+        if (isEmptyStage() && stageRm.isEmpty()) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
         } else if (msg.isBlank()) {
             System.out.println("Please enter a commit message.");
             System.exit(0);
         }
-        Commit newCommit = new Commit(pointer.get(pointer.get("head")), msg);
+        Commit newCommit = new Commit(getCommit("head"), msg);
         pointer.put(pointer.get("head"), newCommit.getHash());
-        Stage.clear();
+        clearStage();
     }
 
     /**
@@ -110,39 +111,34 @@ public class Repository {
      * If the file is tracked in current commit, deletes it from CWD
      * and stages it for rm.
      */
-    public static void rm(String fileName) {
-        boolean staged = Stage.contains(fileName);
+    public static void rm(String fileName) throws IOException {
+        boolean staged = containsStage(fileName);
         boolean commited = getCommit("head").containFile(fileName);
+        Path rmFile = CWD.resolve(fileName);
         if (!staged && !commited) {
             System.out.println("No reason to remove the file.");
             System.exit(0);
         }
         if (staged) {
-            Stage.rm(fileName);
+            rmStage(fileName);
         }
-        File rmFile = join(CWD, fileName);
-        if (commited && rmFile.exists()) {
-            restrictedDelete(rmFile);
+        if (commited && Files.exists(rmFile)) {
+            restrictedDelete(fileName);
+            stageRm.add(fileName);
         }
-        Stage.stageRm.add(fileName);
     }
 
     /** Log from head commit. */
-    private static void log(String cid) {
+    public static void log(String cid) {
         Commit node = getCommit(cid);
         node.display();
         if (cid.equals(pointer.get("initCommit"))) return;
         log(node.getParent());
     }
 
-    /** Log. */
-    public static void log() {
-        log(pointer.get(pointer.get("head")));
-    }
-
     /** Global-log. */
     public static void globalLog() throws IOException {
-        try (Stream<Path> stream = Files.walk(COMMIT_DIR.toPath())) {
+        try (Stream<Path> stream = Files.walk(COMMIT_DIR)) {
             stream.filter(Files::isRegularFile).forEach(cPath -> {
                 Commit commit = readObject(cPath.toFile(), Commit.class);
                 commit.display();
@@ -153,7 +149,7 @@ public class Repository {
     /** Find. */
     public static void find(String cMsg) throws IOException {
         AtomicInteger msgNum = new AtomicInteger(0);
-        try (Stream<Path> stream = Files.walk(COMMIT_DIR.toPath())) {
+        try (Stream<Path> stream = Files.walk(COMMIT_DIR)) {
             stream.filter(Files::isRegularFile).forEach(cPath -> {
                 Commit commit = readObject(cPath.toFile(), Commit.class);
                 if (cMsg.equals(commit.getMessage())) {
@@ -183,28 +179,28 @@ public class Repository {
             System.out.println(file);
         }
         System.out.println("\nRemoved Files");
-        for (String file : Stage.stageRm) {
+        for (String file : stageRm) {
             System.out.println(file);
         }
         System.out.println("\n=== Modifications Not Staged For Commit ===");
-        Commit current = getCommit("head");
-        for (Map.Entry<String, String> entry : current.entrySet()) {
+        Commit currentCommit = getCommit("head");
+        for (Map.Entry<String, String> entry : currentCommit.blobEntrySet()) {
             String file = entry.getKey();
-            File cwd = new File(file);
-            if (cwd.exists()) {
+            Path cwd = CWD.resolve(file);
+            if (Files.exists(cwd)) {
                 String cwdHash = sha1((Object) readContents(cwd));
-                if (!entry.getValue().equals(cwdHash) && !Stage.contains(file, cwdHash)) {
+                if (!entry.getValue().equals(cwdHash) && !containsStage(file, cwdHash)) {
                     System.out.println(file + " (modified)");
                 }
-            } else if (Stage.stageRm.contains(file)) {
+            } else if (stageRm.contains(file)) {
                 System.out.println(file + " (deleted)");
             }
         }
         for (String file : stgFiles) {
-            String stgHash = sha1((Object) readContents(join(STAGE_DIR, file)));
-            File cwd = join(file);
-            if (cwd.exists()) {
-                String cwdHash = sha1((Object) readContents(join(file)));
+            String stgHash = sha1((Object) readContents(STAGE_DIR.resolve(file)));
+            Path cwd = CWD.resolve(file);
+            if (Files.exists(cwd)) {
+                String cwdHash = sha1((Object) readContents(cwd));
                 if (!stgHash.equals(cwdHash)) {
                     System.out.println(file + " (modified)");
                 }
@@ -213,11 +209,11 @@ public class Repository {
             }
         }
         System.out.println("\n=== Untracked Files ===");
-        List<String> cwd = plainFilenamesIn(CWD);
-        assert cwd != null;
-        cwd.remove(".gitlet");
-        for (String file : cwd) {
-            if (!current.containFile(file) && !Stage.contains(file)) {
+        List<String> cwdFiles = plainFilenamesIn(CWD);
+        assert cwdFiles != null;
+        cwdFiles.remove(".gitlet");
+        for (String file : cwdFiles) {
+            if (!currentCommit.containFile(file) && !containsStage(file)) {
                 System.out.println(file);
             }
         }
@@ -227,18 +223,18 @@ public class Repository {
     /** Recover file status from commit id. */
     private static void recover(String cid) throws IOException {
         Commit commit = getCommit(cid); // Failure case at Commit.readCommit
-        List<String> cwd = plainFilenamesIn(CWD);
-        assert cwd != null;
-        cwd.remove(".gitlet");
-        for (String file : cwd) {
-            String hash = sha1((Object) readContents(new File(file)));
+        List<String> cwdFiles = plainFilenamesIn(CWD);
+        assert cwdFiles != null;
+        cwdFiles.remove(".gitlet");
+        for (String file : cwdFiles) {
+            String hash = sha1((Object) readContents(CWD.resolve(file)));
             if (!commit.containFile(file) || !commit.containFile(file, hash)) {
                 System.out.println("There is an untracked file in the way;" +
                         " delete it, or add and commit it first.");
                 System.exit(0);
             }
         }
-        commit.writeCWD();
+        writeCWD(commit);
     }
 
     /** Checkout [branch name]. */
@@ -253,20 +249,16 @@ public class Repository {
         }
         recover(branch);
         pointer.put("head", branch);
-        Stage.clear();
-    }
-    /** Checkout -- [file name]. */
-    public static void checkout(String line, String file) throws IOException {
-        checkout("head", "--", file);
+        clearStage();
     }
     /** Checkout [commit id] -- [file name]. */
-    public static void checkout(String cid, String line, String file) throws IOException {
+    public static void checkout(String cid, String file) throws IOException {
         Commit commit = getCommit(cid); // Failure case at Commit.readCommit
         if (!commit.containFile(file)) {
             System.out.println("File does not exist in that commit.");
             System.exit(0);
         }
-        commit.writeCWD(file);
+        writeCWD(commit, file);
     }
 
     /** Branch. */
@@ -295,19 +287,133 @@ public class Repository {
     public static void reset(String cid) throws IOException {
         recover(cid);
         pointer.put(pointer.get("head"), cid);
-        Stage.clear();
+        clearStage();
     }
 
     /** Merge. */
     public static void merge(String branch) {
-        
     }
 
     /** Returns the commit instance of head or certain branch or commit id. */
     private static Commit getCommit(String p) {
         // if p is a name(head or branch name), cid = get(p), else(p is hash) cid = p
         if (p.equals("head")) p = pointer.get(p);
-        return Commit.readCommit(pointer.getOrDefault(p, p));
+        return readCommit(pointer.getOrDefault(p, p));
+    }
+
+    /** Adds a file from CWD to STAGE_DIR.
+     * There should not be a file in STAGE_DIR with same name and version.
+     */
+    public static void addStage(String fileName) throws IOException {
+        Files.copy(CWD.resolve(fileName), STAGE_DIR.resolve(fileName), REPLACE_EXISTING);
+    }
+
+    /** Remove a file from STAGE_DIR. */
+    public static void rmStage(String fileName) throws IOException {
+        Files.delete(STAGE_DIR.resolve(fileName));
+    }
+
+    /** Returns if stage area contains a file. */
+    public static boolean containsStage(String file) {
+        List<String> allFiles = plainFilenamesIn(STAGE_DIR);
+        assert allFiles != null;
+        return allFiles.contains(file);
+    }
+    /** Returns if stage area contains a file with that exact hash. */
+    public static boolean containsStage(String file, String hash) {
+        List<String> allFiles = plainFilenamesIn(STAGE_DIR);
+        assert allFiles != null;
+        return (allFiles.contains(file) && hash.equals(sha1((Object) readContents(STAGE_DIR.resolve(file)))));
+    }
+
+    /** Returns if stage area is empty. */
+    public static boolean isEmptyStage() {
+        return plainFilenamesIn(STAGE_DIR) == null;
+    }
+
+    /** Clear the STAGE_DIR. */
+    public static void clearStage() throws IOException {
+        List<String> allFiles = plainFilenamesIn(STAGE_DIR);
+        if (allFiles == null) {
+            return;
+        }
+        for (String file : allFiles) {
+            rmStage(file);
+        }
+    }
+
+
+    /** Returns the commit instance according to hash. */
+    public static Commit readCommit(String commitHash) {
+        Path folder = COMMIT_DIR.resolve(commitHash.substring(0, 2));
+        String restCommit = commitHash.substring(2);
+        int sameID = 0;
+        String commitFile = "";
+        if (Files.exists(folder)) {
+            List<String> allFiles = plainFilenamesIn(folder);
+            assert allFiles != null;
+            for (String file : allFiles) {
+                if (file.startsWith(restCommit)) {
+                    commitFile = file;
+                    sameID++;
+                }
+            }
+        }
+        if (sameID == 0) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        } else if (sameID > 1) {
+            System.out.println("Ambiguous commit id.");
+            System.exit(0);
+        }
+        return readObject(folder.resolve(commitFile), Commit.class);
+    }
+
+    /** Serialize a commit into COMMIT_DIR. */
+    public static void writeCommit(Commit c) throws IOException {
+        Path subHash = COMMIT_DIR.resolve(c.getHash().substring(0, 2));
+        Files.createDirectory(subHash);
+        Utils.writeObject(subHash.resolve(c.getHash().substring(2)), c);
+    }
+
+    /** Serialize all files from stage area into blob folder.
+     * Adds them to the newCommit blobs. */
+    public static void commitFromStage(Commit newCommit) throws IOException {
+        List<String> allFiles = plainFilenamesIn(STAGE_DIR);
+        assert allFiles != null;
+        if (allFiles.isEmpty()) {
+            return;
+        }
+        for (String file : allFiles) {
+            String hash = sha1((Object) readContents(STAGE_DIR.resolve(file)));
+            newCommit.linkBlob(file, hash);
+            Path Folder = BLOB_DIR.resolve(hash.substring(0, 2));
+            Files.createDirectory(Folder);
+            Files.copy(STAGE_DIR.resolve(file), Folder.resolve(hash.substring(2)));
+        }
+    }
+
+    /** Overwrite a file from commit to CWD. */
+    public static void writeCWD(Commit c, String fileName) throws IOException {
+        String fileHash = c.getFileHash(fileName);
+        Files.copy(
+                BLOB_DIR.resolve(fileHash.substring(0,2)).resolve(fileHash.substring(2)),
+                CWD.resolve(fileName), REPLACE_EXISTING);
+    }
+
+    /** Delete all files in CWD.
+     * Overwrite all files from commit to CWD. */
+    public static void writeCWD(Commit c) throws IOException {
+        List<String> cwdFile = plainFilenamesIn(Repository.CWD);
+        if (cwdFile != null) {
+            cwdFile.remove(".gitlet");
+            for (String file : cwdFile) {
+                restrictedDelete(file);
+            }
+        }
+        for (Map.Entry<String, String> entry : c.blobEntrySet()) {
+            writeCWD(c, entry.getKey());
+        }
     }
 
 

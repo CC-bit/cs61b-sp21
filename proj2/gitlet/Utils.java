@@ -10,6 +10,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -62,6 +63,11 @@ class Utils {
     static String sha1(List<Object> vals) {
         return sha1(vals.toArray(new Object[vals.size()]));
     }
+    /** Returns the SHA-1 hash of the concatenation of the strings in
+     *  VALS. */
+    static String sha1(byte[] vals) {
+        return sha1((Object) vals);
+    }
 
     /* FILE DELETION */
 
@@ -102,6 +108,12 @@ class Utils {
         } catch (IOException excp) {
             throw new IllegalArgumentException(excp.getMessage());
         }
+    }
+    /** Return the entire contents of FILE as a byte array.  FILE must
+     *  be a normal file.  Throws IllegalArgumentException
+     *  in case of problems. */
+    static byte[] readContents(Path path) {
+        return readContents(path.toFile());
     }
 
     /** Return the entire contents of FILE as a String.  FILE must
@@ -151,10 +163,19 @@ class Utils {
             throw new IllegalArgumentException(excp.getMessage());
         }
     }
+    /** Return an object of type T read from FILE, casting it to EXPECTEDCLASS.
+     *  Throws IllegalArgumentException in case of problems. */
+    static <T extends Serializable> T readObject(Path path, Class<T> expectedClass) {
+        return readObject(path.toFile(), expectedClass);
+    }
 
     /** Write OBJ to FILE. */
     static void writeObject(File file, Serializable obj) {
         writeContents(file, serialize(obj));
+    }
+    /** Write OBJ to FILE. */
+    static void writeObject(Path path, Serializable obj) {
+        writeContents(path.toFile(), serialize(obj));
     }
 
     /* DIRECTORIES */
@@ -186,6 +207,12 @@ class Utils {
      *  not denote a directory. */
     static List<String> plainFilenamesIn(String dir) {
         return plainFilenamesIn(new File(dir));
+    }
+    /** Returns a list of the names of all plain files in the directory DIR, in
+     *  lexicographic order as Java Strings.  Returns null if DIR does
+     *  not denote a directory. */
+    static List<String> plainFilenamesIn(Path dir) {
+        return plainFilenamesIn(dir.toFile());
     }
 
     /* OTHER FILE UTILITIES */
