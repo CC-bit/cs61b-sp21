@@ -23,12 +23,16 @@ public class Commit implements Serializable {
     private final TreeMap<String, String> blobs;
     /** The message of this commit. */
     private final String message;
-    /** The default parent. */
-    private String parent;
-    /** The second parent. */
-    private String secondParent;
+    /** The default parentID. */
+    private final String parentID;
+    /** The second parentID. */
+    private String secondParentID;
     /** The sha1 of all fields expect sha1 itself. */
     private final String commitHash;
+    /** The default parent. */
+    private transient Commit parent;
+    /** The second parent. */
+    private transient Commit secondParent;
 
     /** Creates a commit node. */
     public Commit(Commit parentCommit, String msg) throws IOException {
@@ -39,7 +43,7 @@ public class Commit implements Serializable {
             blobs.remove(k);
         }
         message = msg;
-        parent = parentCommit.getHash();
+        parentID = parentCommit.getHash();
         commitHash = calHash();
         Repository.writeCommit(this);
     }
@@ -51,6 +55,7 @@ public class Commit implements Serializable {
                 .toInstant(ZoneOffset.UTC);
         blobs = new TreeMap<>();
         message = "initial commit";
+        parentID = null;
         commitHash = calHash();
         Repository.writeCommit(this);
     }
@@ -70,8 +75,8 @@ public class Commit implements Serializable {
                 "timeStamp", serialize(timeStamp),
                 "blobs", serialize(blobs),
                 "message", serialize(message),
-                "parent", serialize(parent),
-                "secondParent", serialize(secondParent)
+                "parentID", serialize(parentID),
+                "secondParentID", serialize(secondParentID)
         );
     }
 
@@ -84,25 +89,34 @@ public class Commit implements Serializable {
     public boolean containFile(String fileName) {
         return blobs.containsKey(fileName);
     }
+
     /** Returns if contains the file with the hash. */
     public boolean containFile(String fileName, String fileHash) {
         return blobs.containsKey(fileName) && blobs.get(fileName).equals(fileHash);
     }
 
-    /** Returns parent commit hash. */
-    public String getParent() {
+    /** Returns parent commit. */
+    public Commit getParent() {
+        if (parent == null) {
+            parent = Repository.getCommit(parentID);
+        }
         return parent;
+    }
+
+    /** Returns parentID. */
+    public String getParentID() {
+        return parentID;
     }
 
     /** Display information. */
     public void display() {
         System.out.println("===");
         System.out.println("commit " + commitHash);
-        if (secondParent != null) {
+        if (secondParentID != null) {
             System.out.println(
                     "Merge: "
-                    + parent.substring(0, 7) + " "
-                    + secondParent.substring(0, 7)
+                    + parentID.substring(0, 7) + " "
+                    + secondParentID.substring(0, 7)
             );
         }
         ZonedDateTime zonedDateTime = timeStamp.atZone(ZoneId.systemDefault());

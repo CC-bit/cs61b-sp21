@@ -31,10 +31,15 @@ public class Repository {
     public static final Path BLOB_DIR = GITLET_DIR.resolve("blob");
     /** The commit directory. */
     public static final Path COMMIT_DIR = GITLET_DIR.resolve("commit");
-    /** The pointer file. */
-    public static final Path POINTER = GITLET_DIR.resolve("pointer");
-    /** A map of pointer name like "master" to commit hash. */
-    public static TreeMap<String, String> pointer;
+    /** The branches file. */
+    public static final Path BRANCHES = GITLET_DIR.resolve("branch");
+    /** A map of branches names like "master" to commit hash. */
+    public static TreeMap<String, String> branches;
+    private static final String init = "initCommit";
+    private static final String head = "head";
+    private static final String master = "master";
+    /** A map of commit id to commit instance. */
+    private static final TreeMap<String, Commit> commitCache = new TreeMap<>();
 
     public static final Path STAGERM = GITLET_DIR.resolve("stageRm");
     public static ArrayList<String> stageRm;
@@ -60,9 +65,9 @@ public class Repository {
         Files.createDirectory(COMMIT_DIR);
         Commit initCommit = new Commit();
         String initHash = initCommit.getHash();
-        pointer.put("initCommit", initHash);
-        pointer.put("head", "master");
-        pointer.put("master", initHash);
+        branches.put(init, initHash);
+        branches.put(master, initHash);
+        branches.put(head, master);
     }
 
     /**
@@ -79,7 +84,7 @@ public class Repository {
             System.exit(0);
         }
         String fileHash = Utils.sha1((Object) readContents(filePath));
-        String fileHashCommit = getCommit("head").getFileHash(fileName);
+        String fileHashCommit = getCommit(head).getFileHash(fileName);
         if (Objects.equals(fileHash, fileHashCommit)) {
             rmStage(fileName);
             return;
@@ -101,8 +106,8 @@ public class Repository {
             System.out.println("Please enter a commit message.");
             System.exit(0);
         }
-        Commit newCommit = new Commit(getCommit("head"), msg);
-        pointer.put(pointer.get("head"), newCommit.getHash());
+        Commit newCommit = new Commit(getCommit(head), msg);
+        branches.put(branches.get(head), newCommit.getHash());
         clearStage();
     }
 
@@ -113,7 +118,7 @@ public class Repository {
      */
     public static void rm(String fileName) throws IOException {
         boolean staged = containsStage(fileName);
-        boolean commited = getCommit("head").containFile(fileName);
+        boolean commited = getCommit(head).containFile(fileName);
         Path rmFile = CWD.resolve(fileName);
         if (!staged && !commited) {
             System.out.println("No reason to remove the file.");
@@ -129,11 +134,10 @@ public class Repository {
     }
 
     /** Log from head commit. */
-    public static void log(String cid) {
-        Commit node = getCommit(cid);
-        node.display();
-        if (cid.equals(pointer.get("initCommit"))) return;
-        log(node.getParent());
+    public static void log(Commit commit) {
+        commit.display();
+        if (commit.getHash().equals(branches.get(init))) return;
+        log(commit.getParent());
     }
 
     /** Global-log. */
@@ -169,9 +173,9 @@ public class Repository {
         List<String> stgFiles = plainFilenamesIn(STAGE_DIR);
         assert stgFiles != null;
         System.out.println("=== Branches ===");
-        System.out.println("*" + pointer.get("head"));
-        for (Map.Entry<String, String> entry : pointer.entrySet()) {
-            if (entry.getKey().equals("head")) continue;
+        System.out.println("*" + branches.get(head));
+        for (Map.Entry<String, String> entry : branches.entrySet()) {
+            if (entry.getKey().equals(head)) continue;
             System.out.println(entry.getValue());
         }
         System.out.println("\n=== Staged Files ===");
@@ -183,7 +187,7 @@ public class Repository {
             System.out.println(file);
         }
         System.out.println("\n=== Modifications Not Staged For Commit ===");
-        Commit currentCommit = getCommit("head");
+        Commit currentCommit = getCommit(head);
         for (Map.Entry<String, String> entry : currentCommit.blobEntrySet()) {
             String file = entry.getKey();
             Path cwd = CWD.resolve(file);
@@ -239,18 +243,19 @@ public class Repository {
 
     /** Checkout [branch name]. */
     public static void checkout(String branch) throws IOException {
-        if (!pointer.containsKey(branch)) {
+        if (!branches.containsKey(branch)) {
             System.out.println("No such branch exists.");
             System.exit(0);
         }
-        if (pointer.get("head").equals(branch)) {
+        if (branches.get(head).equals(branch)) {
             System.out.println("No need to checkout the current branch.");
             System.exit(0);
         }
         recover(branch);
-        pointer.put("head", branch);
+        branches.put(head, branch);
         clearStage();
     }
+
     /** Checkout [commit id] -- [file name]. */
     public static void checkout(String cid, String file) throws IOException {
         Commit commit = getCommit(cid); // Failure case at Commit.readCommit
@@ -263,110 +268,86 @@ public class Repository {
 
     /** Branch. */
     public static void branch(String branchName) {
-        if (pointer.containsKey(branchName)) {
+        if (branches.containsKey(branchName)) {
             System.out.println("A branch with that name already exists.");
             System.exit(0);
         }
-        pointer.put(branchName, pointer.get(pointer.get("head")));
+        branches.put(branchName, branches.get(branches.get(head)));
     }
 
     /** Rm-branch. */
     public static void rmBranch(String branchName) {
-        if (!pointer.containsKey(branchName)) {
+        if (!branches.containsKey(branchName)) {
             System.out.println("A branch with that name does not exist.");
             System.exit(0);
         }
-        if (pointer.get("head").equals(branchName)) {
+        if (branches.get(head).equals(branchName)) {
             System.out.println("Cannot remove the current branch.");
             System.exit(0);
         }
-        pointer.remove(branchName);
+        branches.remove(branchName);
     }
 
     /** Reset. */
     public static void reset(String cid) throws IOException {
         recover(cid);
-        pointer.put(pointer.get("head"), cid);
+        branches.put(branches.get(head), cid);
         clearStage();
     }
 
     /** Merge. */
     public static void merge(String branch) {
+        // Find split point
+        Commit cur = getCommit(head);
+        Commit br = getCommit(branch);
+        String split = branches.get(init);
+        Set<String> curSet = new HashSet<>();
+        while (cur.getParentID() != null) { // Put all commits in curSet from head to init except init.
+            curSet.add(cur.getHash());
+            cur = cur.getParent();
+        }
+        while (br.getParentID() != null) {
+            String hash = br.getHash();
+            if (curSet.contains(hash)) {
+                split = hash;
+                break;
+            }
+        }
+        Commit splitPoint = getCommit(split);
     }
 
     /** Returns the commit instance of head or certain branch or commit id. */
-    private static Commit getCommit(String p) {
-        // if p is a name(head or branch name), cid = get(p), else(p is hash) cid = p
-        if (p.equals("head")) p = pointer.get(p);
-        return readCommit(pointer.getOrDefault(p, p));
-    }
-
-    /** Adds a file from CWD to STAGE_DIR.
-     * There should not be a file in STAGE_DIR with same name and version.
-     */
-    public static void addStage(String fileName) throws IOException {
-        Files.copy(CWD.resolve(fileName), STAGE_DIR.resolve(fileName), REPLACE_EXISTING);
-    }
-
-    /** Remove a file from STAGE_DIR. */
-    public static void rmStage(String fileName) throws IOException {
-        Files.delete(STAGE_DIR.resolve(fileName));
-    }
-
-    /** Returns if stage area contains a file. */
-    public static boolean containsStage(String file) {
-        List<String> allFiles = plainFilenamesIn(STAGE_DIR);
-        assert allFiles != null;
-        return allFiles.contains(file);
-    }
-    /** Returns if stage area contains a file with that exact hash. */
-    public static boolean containsStage(String file, String hash) {
-        List<String> allFiles = plainFilenamesIn(STAGE_DIR);
-        assert allFiles != null;
-        return (allFiles.contains(file) && hash.equals(sha1((Object) readContents(STAGE_DIR.resolve(file)))));
-    }
-
-    /** Returns if stage area is empty. */
-    public static boolean isEmptyStage() {
-        return plainFilenamesIn(STAGE_DIR) == null;
-    }
-
-    /** Clear the STAGE_DIR. */
-    public static void clearStage() throws IOException {
-        List<String> allFiles = plainFilenamesIn(STAGE_DIR);
-        if (allFiles == null) {
-            return;
+    public static Commit getCommit(String id) {
+        // if id is a name(head or branch name), cid = get(id), else(id is hash) cid = id
+        if (id.equals(head)) id = branches.get(id);
+        String cid = branches.getOrDefault(id, id);
+        if (commitCache.containsKey(cid)) {
+            return commitCache.get(cid);
         }
-        for (String file : allFiles) {
-            rmStage(file);
-        }
-    }
-
-
-    /** Returns the commit instance according to hash. */
-    public static Commit readCommit(String commitHash) {
-        Path folder = COMMIT_DIR.resolve(commitHash.substring(0, 2));
-        String restCommit = commitHash.substring(2);
-        int sameID = 0;
-        String commitFile = "";
+        Path folder = COMMIT_DIR.resolve(cid.substring(0, 2));
+        String restCid = cid.substring(2);
+        int commitNum = 0;
+        String commit = "";
         if (Files.exists(folder)) {
             List<String> allFiles = plainFilenamesIn(folder);
             assert allFiles != null;
             for (String file : allFiles) {
-                if (file.startsWith(restCommit)) {
-                    commitFile = file;
-                    sameID++;
+                if (file.startsWith(restCid)) {
+                    commit = file;
+                    commitNum++;
                 }
             }
         }
-        if (sameID == 0) {
+        if (commitNum == 0) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
-        } else if (sameID > 1) {
+        } else if (commitNum > 1) {
             System.out.println("Ambiguous commit id.");
             System.exit(0);
         }
-        return readObject(folder.resolve(commitFile), Commit.class);
+        Commit target = readObject(folder.resolve(commit), Commit.class);
+        commitCache.put(cid, target);
+        return target;
     }
 
     /** Serialize a commit into COMMIT_DIR. */
@@ -416,5 +397,42 @@ public class Repository {
         }
     }
 
+    /** Adds a file from CWD to STAGE_DIR.
+     * There should not be a file in STAGE_DIR with same name and version.
+     */
+    public static void addStage(String fileName) throws IOException {
+        Files.copy(CWD.resolve(fileName), STAGE_DIR.resolve(fileName), REPLACE_EXISTING);
+    }
+
+    /** Remove a file from STAGE_DIR. */
+    public static void rmStage(String fileName) throws IOException {
+        Files.delete(STAGE_DIR.resolve(fileName));
+    }
+    /** Returns if stage area contains a file. */
+    public static boolean containsStage(String file) {
+        List<String> allFiles = plainFilenamesIn(STAGE_DIR);
+        assert allFiles != null;
+        return allFiles.contains(file);
+    }
+    /** Returns if stage area contains a file with that exact hash. */
+    public static boolean containsStage(String file, String hash) {
+        List<String> allFiles = plainFilenamesIn(STAGE_DIR);
+        assert allFiles != null;
+        return (allFiles.contains(file) && hash.equals(sha1((Object) readContents(STAGE_DIR.resolve(file)))));
+    }
+    /** Returns if stage area is empty. */
+    public static boolean isEmptyStage() {
+        return plainFilenamesIn(STAGE_DIR) == null;
+    }
+    /** Clear the STAGE_DIR. */
+    public static void clearStage() throws IOException {
+        List<String> allFiles = plainFilenamesIn(STAGE_DIR);
+        if (allFiles == null) {
+            return;
+        }
+        for (String file : allFiles) {
+            rmStage(file);
+        }
+    }
 
 }

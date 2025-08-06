@@ -46,7 +46,7 @@ public class Main {
                 break;
             case "log":
                 validateNumArgs(args, 1);
-                Repository.log(Repository.pointer.get(Repository.pointer.get("head")));
+                Repository.log(Repository.getCommit("head"));
                 break;
             case "global-log":
                 validateNumArgs(args, 1);
@@ -118,12 +118,12 @@ public class Main {
 
     /** Load Repo and Stage state from file. */
     private static void loadState() {
-        if (Files.exists(Repository.POINTER)) {
+        if (Files.exists(Repository.BRANCHES)) {
             @SuppressWarnings("unchecked")
-            TreeMap<String, String> loadedPointer0 = Utils.readObject(Repository.POINTER, TreeMap.class);
-            Repository.pointer = loadedPointer0;
+            TreeMap<String, String> loadedPointer0 = Utils.readObject(Repository.BRANCHES, TreeMap.class);
+            Repository.branches = loadedPointer0;
         } else {
-            Repository.pointer = new TreeMap<>();
+            Repository.branches = new TreeMap<>();
         }
         if (Files.exists(Repository.STAGERM)) {
             @SuppressWarnings("unchecked")
@@ -136,7 +136,7 @@ public class Main {
 
     /** Save app state to file. */
     private static void saveState() {
-        Utils.writeObject(Repository.POINTER, Repository.pointer);
+        Utils.writeObject(Repository.BRANCHES, Repository.branches);
         Utils.writeObject(Repository.STAGERM, Repository.stageRm);
     }
 }

@@ -105,6 +105,7 @@ public class TestMyHashMap {
         for (int i = 0; i < 455; i++) {
             b.put("hi" + i, 1);
             values.add("hi" + i);
+            boolean b1 = b.containsKey("hi270");
         }
         assertEquals(455, b.size()); //keys are there
         Set<String> keySet = b.keySet();
