@@ -1,7 +1,5 @@
 package hashmap;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.*;
 
 /**
@@ -189,7 +187,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
         }
 
         @Override
-        public @NotNull Iterator<K> iterator() {
+        public Iterator<K> iterator() {
             return map.iterator();
         }
 
@@ -236,7 +234,6 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
         return null;
     }
 
-    @NotNull
     @Override
     public Iterator<K> iterator() {
         return new MyMapIterator();
