@@ -137,7 +137,9 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     public V get(K key) {
         V value = null;
         Node n = getNode(key);
-        if (n != null) value = n.value;
+        if (n != null) {
+            value = n.value;
+        }
         return value;
     }
 
@@ -170,7 +172,9 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
             }
             buckets = newBuckets;
         }
-        if (!containsKey(key)) size++;
+        if (!containsKey(key)) {
+            size++;
+        }
         putBuckets(buckets, key, value);
     }
 
@@ -182,7 +186,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     private class KeySet extends AbstractSet<K> {
         MyHashMap<K, V> map;
 
-        public KeySet(MyHashMap<K, V> map) {
+        KeySet(MyHashMap<K, V> map) {
             this.map = map;
         }
 
@@ -205,7 +209,9 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
         @Override
         public boolean containsAll(Collection<?> c) {
             for (Object key : c) {
-                if (!contains(key)) return false;
+                if (!contains(key)) {
+                    return false;
+                }
             }
             return true;
         }
@@ -214,7 +220,9 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     @Override
     public V remove(K key) {
         Node n = getNode(key);
-        if (n == null) return null;
+        if (n == null) {
+            return null;
+        }
         V value = n.value;
         buckets[index(key)].remove(n);
         size--;
@@ -243,9 +251,11 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
         int curIndex;
         Iterator<Node> iter;
 
-        public MyMapIterator() {
+        MyMapIterator() {
             curIndex = findIndex(-1);
-            if (curIndex >= 0) iter = buckets[curIndex].iterator();
+            if (curIndex >= 0) {
+                iter = buckets[curIndex].iterator();
+            }
         }
 
         private int findIndex(int cur) {
@@ -260,7 +270,9 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
 
         @Override
         public boolean hasNext() {
-            if (curIndex < 0 || buckets[curIndex] == null) return false;
+            if (curIndex < 0 || buckets[curIndex] == null) {
+                return false;
+            }
             return iter.hasNext();
         }
 
