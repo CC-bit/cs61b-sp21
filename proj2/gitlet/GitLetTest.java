@@ -33,21 +33,6 @@ public class GitLetTest {
         System.out.println("blob hash:  " + blobHash);
     }
 
-
-    @Test
-    public void testSha1() throws IOException {
-        String hee = "helloworld";
-        File a = new File("testing");
-        String ha = "a012345";
-        File sub = join(a, ha.substring(0, 2));
-        sub.mkdir();
-        File h = join(sub, ha.substring(2));
-        Utils.writeObject(
-                h,
-                hee
-        );
-    }
-
     @Test
     public void ca() {
         List<String> allFiles = plainFilenamesIn(Repository.CWD);

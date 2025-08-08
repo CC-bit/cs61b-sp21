@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
+import static gitlet.Utils.failureCase;
+
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author dhzp
  */
@@ -15,10 +17,7 @@ public class Main {
      */
     public static void main(String[] args) throws IOException {
         int l = args.length;
-        if (l == 0) {
-            System.out.println("Please enter a command.");
-            System.exit(0);
-        }
+        failureCase(l == 0, "Please enter a command.");
         loadState();
         String firstArg = args[0];
         if (firstArg.equals("init")) {
@@ -27,10 +26,8 @@ public class Main {
             saveState();
             return;
         }
-        if (!Files.exists(Repository.GITLET_DIR)) {
-            System.out.println("Not in an initialized Gitlet directory.");
-            System.exit(0);
-        }
+        failureCase(!Files.exists(Repository.GITLET_DIR),
+                "Not in an initialized Gitlet directory.");
         switch(firstArg) {
             case "add":
                 validateNumArgs(args, 2);

@@ -35,18 +35,19 @@ public class Commit implements Serializable {
     private transient Commit secondParent;
 
     /** Creates a commit node. */
-    public Commit(Commit parentCommit, String msg) throws IOException {
+    public Commit(Commit parCommit, String msg) throws IOException {
         timeStamp = Instant.now();
-        blobs = new TreeMap<>(parentCommit.blobs);
+        blobs = new TreeMap<>(parCommit.blobs);
         Repository.commitFromStage(this);
         for (String k : Repository.stageRm) {
             blobs.remove(k);
         }
         message = msg;
-        parentID = parentCommit.getHash();
+        parentID = parCommit.getID();
         commitHash = calHash();
         Repository.writeCommit(this);
     }
+
 
     /** Creates the initial commit node. */
     public Commit() throws IOException {
@@ -65,7 +66,7 @@ public class Commit implements Serializable {
         return blobs.get(key);
     }
 
-    public String getHash() {
+    public String getID() {
         return commitHash;
     }
 
@@ -86,26 +87,41 @@ public class Commit implements Serializable {
     }
 
     /** Returns if contains the file. */
-    public boolean containFile(String fileName) {
-        return blobs.containsKey(fileName);
+    public boolean isFileMissing(String fileName) {
+        return !blobs.containsKey(fileName);
     }
 
-    /** Returns if contains the file with the hash. */
-    public boolean containFile(String fileName, String fileHash) {
-        return blobs.containsKey(fileName) && blobs.get(fileName).equals(fileHash);
+    /** Returns true if the commit contains the file with the hash.
+     * Returns false if not contain file or contain with different hash. */
+    public boolean isFileMissing(String fileName, String fileHash) {
+        return !blobs.containsKey(fileName) || !blobs.get(fileName).equals(fileHash);
     }
 
-    /** Returns parent commit. */
+    /** Returns parent commit. Or null if not have. */
     public Commit getParent() {
+        if (parentID == null) {
+            return null;
+        }
         if (parent == null) {
             parent = Repository.getCommit(parentID);
         }
         return parent;
     }
 
-    /** Returns parentID. */
-    public String getParentID() {
-        return parentID;
+    /** Add second parentID. */
+    public void linkSecParent(String secParID) {
+        secondParentID = secParID;
+    }
+
+    /** Returns the second parent commit. Or null if not have. */
+    public Commit getSecondParent() {
+        if (secondParentID == null) {
+            return null;
+        }
+        if (secondParent == null) {
+            secondParent = Repository.getCommit(secondParentID);
+        }
+        return secondParent;
     }
 
     /** Display information. */

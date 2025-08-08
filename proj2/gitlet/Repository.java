@@ -53,18 +53,14 @@ public class Repository {
      *    - commit/ -- folder containing all the persistent data for commits
      */
     public static void init() throws IOException {
-        if (Files.exists(GITLET_DIR)) {
-            System.out.println(
-                    "A Gitlet version-control system already exists in the current directory."
-            );
-            System.exit(0);
-        }
+        failureCase(Files.exists(GITLET_DIR),
+                "A Gitlet version-control system already exists in the current directory.");
         Files.createDirectory(GITLET_DIR);
         Files.createDirectory(STAGE_DIR);
         Files.createDirectory(BLOB_DIR);
         Files.createDirectory(COMMIT_DIR);
         Commit initCommit = new Commit();
-        String initHash = initCommit.getHash();
+        String initHash = initCommit.getID();
         branches.put(init, initHash);
         branches.put(master, initHash);
         branches.put(head, master);
@@ -97,18 +93,18 @@ public class Repository {
      * Copies the last commit as the new commit.
      * Updates the files in staging area.
      * Untracking files in stageRm area.
+     * Returns the new commit.
      */
-    public static void commit(String msg) throws IOException {
-        if (isEmptyStage() && stageRm.isEmpty()) {
-            System.out.println("No changes added to the commit.");
-            System.exit(0);
-        } else if (msg.isBlank()) {
-            System.out.println("Please enter a commit message.");
-            System.exit(0);
-        }
+    public static Commit commit(String msg) throws IOException {
+        failureCase(isEmptyStage() && stageRm.isEmpty(),
+                "No changes added to the commit.");
+        failureCase(msg.isBlank(), "Please enter a commit message.");
         Commit newCommit = new Commit(getCommit(head), msg);
-        branches.put(branches.get(head), newCommit.getHash());
+        String newID = newCommit.getID();
+        commitCache.put(newID, newCommit);
+        branches.put(branches.get(head), newID);
         clearStage();
+        return newCommit;
     }
 
     /**
@@ -118,16 +114,13 @@ public class Repository {
      */
     public static void rm(String fileName) throws IOException {
         boolean staged = containsStage(fileName);
-        boolean commited = getCommit(head).containFile(fileName);
+        boolean notCommited = getCommit(head).isFileMissing(fileName);
         Path rmFile = CWD.resolve(fileName);
-        if (!staged && !commited) {
-            System.out.println("No reason to remove the file.");
-            System.exit(0);
-        }
+        failureCase(!staged && notCommited, "No reason to remove the file.");
         if (staged) {
             rmStage(fileName);
         }
-        if (commited && Files.exists(rmFile)) {
+        if (!notCommited && Files.exists(rmFile)) {
             restrictedDelete(fileName);
             stageRm.add(fileName);
         }
@@ -136,7 +129,7 @@ public class Repository {
     /** Log from head commit. */
     public static void log(Commit commit) {
         commit.display();
-        if (commit.getHash().equals(branches.get(init))) return;
+        if (commit.getID().equals(branches.get(init))) return;
         log(commit.getParent());
     }
 
@@ -158,14 +151,11 @@ public class Repository {
                 Commit commit = readObject(cPath.toFile(), Commit.class);
                 if (cMsg.equals(commit.getMessage())) {
                     msgNum.incrementAndGet();
-                    System.out.println(commit.getHash());
+                    System.out.println(commit.getID());
                 }
             });
         }
-        if (msgNum.get() == 0) {
-            System.out.println("Found no commit with that message.");
-            System.exit(0);
-        }
+        failureCase(msgNum.get() == 0, "Found no commit with that message.");
     }
 
     /** Status. */
@@ -217,40 +207,37 @@ public class Repository {
         assert cwdFiles != null;
         cwdFiles.remove(".gitlet");
         for (String file : cwdFiles) {
-            if (!currentCommit.containFile(file) && !containsStage(file)) {
+            if (currentCommit.isFileMissing(file) && !containsStage(file)) {
                 System.out.println(file);
             }
         }
-
     }
 
-    /** Recover file status from commit id. */
-    private static void recover(String cid) throws IOException {
-        Commit commit = getCommit(cid); // Failure case at Commit.readCommit
+    /** Check if CWD file tracked. */
+    private static void CWDTrackCheck(Commit branch) {
+        Commit cur = getCommit(head);
         List<String> cwdFiles = plainFilenamesIn(CWD);
         assert cwdFiles != null;
         cwdFiles.remove(".gitlet");
         for (String file : cwdFiles) {
             String hash = sha1((Object) readContents(CWD.resolve(file)));
-            if (!commit.containFile(file) || !commit.containFile(file, hash)) {
-                System.out.println("There is an untracked file in the way;" +
+            failureCase(cur.isFileMissing(file, hash) && branch.isFileMissing(file, hash),
+                    "There is an untracked file in the way;" +
                         " delete it, or add and commit it first.");
-                System.exit(0);
-            }
         }
-        writeCWD(commit);
+    }
+    /** Recover file status from commit id. */
+    private static void recover(String branchID) throws IOException {
+        Commit branch = getCommit(branchID); // Failure case at Commit.readCommit
+        CWDTrackCheck(branch); // Failure case
+        writeCWD(branch);
     }
 
     /** Checkout [branch name]. */
     public static void checkout(String branch) throws IOException {
-        if (!branches.containsKey(branch)) {
-            System.out.println("No such branch exists.");
-            System.exit(0);
-        }
-        if (branches.get(head).equals(branch)) {
-            System.out.println("No need to checkout the current branch.");
-            System.exit(0);
-        }
+        failureCase(!branches.containsKey(branch), "No such branch exists.");
+        failureCase(branches.get(head).equals(branch),
+                "No need to checkout the current branch.");
         recover(branch);
         branches.put(head, branch);
         clearStage();
@@ -259,32 +246,23 @@ public class Repository {
     /** Checkout [commit id] -- [file name]. */
     public static void checkout(String cid, String file) throws IOException {
         Commit commit = getCommit(cid); // Failure case at Commit.readCommit
-        if (!commit.containFile(file)) {
-            System.out.println("File does not exist in that commit.");
-            System.exit(0);
-        }
+        failureCase(commit.isFileMissing(file), "File does not exist in that commit.");
         writeCWD(commit, file);
     }
 
     /** Branch. */
     public static void branch(String branchName) {
-        if (branches.containsKey(branchName)) {
-            System.out.println("A branch with that name already exists.");
-            System.exit(0);
-        }
+        failureCase(branches.containsKey(branchName),
+                "A branch with that name already exists.");
         branches.put(branchName, branches.get(branches.get(head)));
     }
 
     /** Rm-branch. */
     public static void rmBranch(String branchName) {
-        if (!branches.containsKey(branchName)) {
-            System.out.println("A branch with that name does not exist.");
-            System.exit(0);
-        }
-        if (branches.get(head).equals(branchName)) {
-            System.out.println("Cannot remove the current branch.");
-            System.exit(0);
-        }
+        failureCase(!branches.containsKey(branchName),
+            "A branch with that name does not exist.");
+        failureCase(branches.get(head).equals(branchName),
+                "Cannot remove the current branch.");
         branches.remove(branchName);
     }
 
@@ -295,25 +273,144 @@ public class Repository {
         clearStage();
     }
 
-    /** Merge. */
-    public static void merge(String branch) {
-        // Find split point
-        Commit cur = getCommit(head);
-        Commit br = getCommit(branch);
-        String split = branches.get(init);
-        Set<String> curSet = new HashSet<>();
-        while (cur.getParentID() != null) { // Put all commits in curSet from head to init except init.
-            curSet.add(cur.getHash());
-            cur = cur.getParent();
-        }
-        while (br.getParentID() != null) {
-            String hash = br.getHash();
-            if (curSet.contains(hash)) {
-                split = hash;
-                break;
+    /** Put all ancestors of the commit into a set and return it. */
+    private static Set<Commit> ancestorSet(Commit cur) {
+        Set<Commit> ancestors = new HashSet<>();
+        Queue<Commit> queue = new ArrayDeque<>();
+        queue.offer(cur);
+        while (queue.peek() != null) {
+            Commit commit = queue.poll();
+            ancestors.add(commit);
+            Commit parent = commit.getParent();
+            Commit secParent = commit.getSecondParent();
+            if (!ancestors.contains(parent)) {
+                queue.offer(parent);
+            }
+            if (!ancestors.contains(secParent)) {
+                queue.offer(secParent);
             }
         }
-        Commit splitPoint = getCommit(split);
+        return ancestors;
+    }
+
+    /** Read from File hash to String. */
+    private static String readBlob(String fileID) throws IOException {
+        String file;
+        if (fileID == null) {
+            file = "";
+        } else {
+            file = Files.readString(BLOB_DIR
+                    .resolve(fileID.substring(0, 2))
+                    .resolve(fileID.substring(2)));
+        }
+        return file;
+    }
+    /** Handling conflict file. **/
+    private static void conflictHandle(String fileName, String curHash, String brHash)
+            throws IOException {
+        String newFile = "<<<<<<< HEAD\n" +
+                readBlob(curHash) +
+                "=======\n" +
+                readBlob(brHash) +
+                ">>>>>>>\n";
+        Files.writeString(CWD.resolve(fileName), newFile);
+        add(fileName);
+    }
+
+    /** Merge. */
+    public static void merge(String branch) throws IOException {
+        // Failure cases
+        List<String> allFiles = plainFilenamesIn(STAGE_DIR);
+        assert allFiles != null;
+        failureCase(!allFiles.isEmpty() || !stageRm.isEmpty(),
+                "You have uncommitted changes.");
+        failureCase(!branches.containsKey(branch), "A branch with that name does not exist.");
+        failureCase(branches.get(head).equals(branch), "Cannot merge a branch with itself.");
+        // Find split point
+        Commit br = getCommit(branch);
+        CWDTrackCheck(br); // Failure case
+        Commit cur = getCommit(head);
+        Commit splitPoint = getCommit(init);
+        Set<Commit> ancestors = ancestorSet(cur);
+        Queue<Commit> queue = new ArrayDeque<>();
+        queue.offer(br);
+        while (queue.peek() != null) {
+            Commit commit = queue.poll();
+            if (ancestors.contains(commit)) {
+                splitPoint = commit;
+                break;
+            }
+            Commit parent = commit.getParent();
+            Commit secParent = commit.getSecondParent();
+            if (parent == null || secParent == null) {
+                break;
+            }
+            queue.offer(parent);
+            queue.offer(secParent);
+        }
+        failureCase(splitPoint.getID().equals(branch),
+                "Given branch is an ancestor of the current branch.");
+        if (splitPoint.getID().equals(cur.getID())) {
+            checkout(branch);
+            System.out.println("Current branch fast-forwarded.");
+            System.exit(0);
+        }
+        // file handle
+        for (Map.Entry<String, String> entry : br.blobEntrySet()) {
+            String brFile = entry.getKey();
+            String brHash = entry.getValue();
+            String splitHash = splitPoint.getFileHash(brFile);
+            String curHash = cur.getFileHash(brFile);
+            boolean curNotContains = cur.isFileMissing(brFile);
+            boolean splitNotContains = splitPoint.isFileMissing(brFile);
+            if (!splitNotContains && !brHash.equals(splitHash)) {
+                if (!curNotContains) {
+                    if (curHash.equals(splitHash)) {
+                        // case 1
+                        checkout(branch, brFile);
+                        add(brFile);
+                    } else if (!brHash.equals(curHash)) {
+                        // case 8.1: in split, cur and br has different hash
+                        conflictHandle(brFile, curHash, brHash);
+                    }
+                } else {
+                    // case 8.2: file absent in cur
+                    conflictHandle(brFile, null, brHash);
+                }
+            } else if (curNotContains) {
+                // case 5: file is in br, not in split, not in cur
+                checkout(branch, brFile);
+                add(brFile);
+            } else if (!brHash.equals(curHash)) {
+                // case 8.3: absent in split, and diff hash between cur and br
+                conflictHandle(brFile, curHash, brHash);
+            }
+        }
+        for (Map.Entry<String, String> entry : cur.blobEntrySet()) {
+            String curFile = entry.getKey();
+            String curHash = entry.getValue();
+            String splitHash = splitPoint.getFileHash(curFile);
+            String brHash = br.getFileHash(curFile);
+            boolean brNotContains = br.isFileMissing(curFile);
+            boolean splitNotContains = splitPoint.isFileMissing(curFile);
+            if (!splitNotContains) {
+                if (curHash.equals(splitHash)) {
+                    if (brNotContains) {
+                        // case 6: rm
+                        rm(curFile);
+                    }
+                } else if (brNotContains) {
+                    // case 8.2: file absent in br
+                    conflictHandle(curFile, curHash, brHash);
+                }
+            } else if (!brNotContains && !curHash.equals(brHash)) {
+                // case 8.3: absent in split, and diff hash between cur and br
+                conflictHandle(curFile, curHash, brHash);
+            }
+        }
+        // Create merge commit
+        Commit newCommit = commit("Merged " + branch + " into " + branches.get(head) + ".");
+        newCommit.linkSecParent(br.getID());
     }
 
     /** Returns the commit instance of head or certain branch or commit id. */
@@ -321,9 +418,11 @@ public class Repository {
         // if id is a name(head or branch name), cid = get(id), else(id is hash) cid = id
         if (id.equals(head)) id = branches.get(id);
         String cid = branches.getOrDefault(id, id);
+        // check if commit is in cache
         if (commitCache.containsKey(cid)) {
             return commitCache.get(cid);
         }
+        // find the target commit
         Path folder = COMMIT_DIR.resolve(cid.substring(0, 2));
         String restCid = cid.substring(2);
         int commitNum = 0;
@@ -338,13 +437,9 @@ public class Repository {
                 }
             }
         }
-        if (commitNum == 0) {
-            System.out.println("No commit with that id exists.");
-            System.exit(0);
-        } else if (commitNum > 1) {
-            System.out.println("Ambiguous commit id.");
-            System.exit(0);
-        }
+        // maybe more than one commit(short id)
+        failureCase(commitNum == 0, "No commit with that id exists.");
+        failureCase(commitNum > 1, "Ambiguous commit id.");
         Commit target = readObject(folder.resolve(commit), Commit.class);
         commitCache.put(cid, target);
         return target;
@@ -352,9 +447,9 @@ public class Repository {
 
     /** Serialize a commit into COMMIT_DIR. */
     public static void writeCommit(Commit c) throws IOException {
-        Path subHash = COMMIT_DIR.resolve(c.getHash().substring(0, 2));
+        Path subHash = COMMIT_DIR.resolve(c.getID().substring(0, 2));
         Files.createDirectory(subHash);
-        Utils.writeObject(subHash.resolve(c.getHash().substring(2)), c);
+        Utils.writeObject(subHash.resolve(c.getID().substring(2)), c);
     }
 
     /** Serialize all files from stage area into blob folder.
@@ -400,7 +495,7 @@ public class Repository {
     /** Adds a file from CWD to STAGE_DIR.
      * There should not be a file in STAGE_DIR with same name and version.
      */
-    public static void addStage(String fileName) throws IOException {
+    private static void addStage(String fileName) throws IOException {
         Files.copy(CWD.resolve(fileName), STAGE_DIR.resolve(fileName), REPLACE_EXISTING);
     }
 
@@ -415,10 +510,11 @@ public class Repository {
         return allFiles.contains(file);
     }
     /** Returns if stage area contains a file with that exact hash. */
-    public static boolean containsStage(String file, String hash) {
+    private static boolean containsStage(String file, String hash) {
         List<String> allFiles = plainFilenamesIn(STAGE_DIR);
         assert allFiles != null;
-        return (allFiles.contains(file) && hash.equals(sha1((Object) readContents(STAGE_DIR.resolve(file)))));
+        return (allFiles.contains(file)
+                && hash.equals(sha1((Object) readContents(STAGE_DIR.resolve(file)))));
     }
     /** Returns if stage area is empty. */
     public static boolean isEmptyStage() {
@@ -434,5 +530,4 @@ public class Repository {
             rmStage(file);
         }
     }
-
 }
