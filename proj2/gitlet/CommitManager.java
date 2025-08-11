@@ -3,11 +3,7 @@ package gitlet;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Locale;
 import java.util.TreeMap;
 
 import static gitlet.Utils.plainFilenamesIn;
@@ -69,22 +65,4 @@ public class CommitManager {
         Utils.writeObject(subHash.resolve(c.getID().substring(2)), c);
     }
 
-    /** Display information. */
-    public void display(Commit commit) {
-        String secPid = commit.getSecondParentID();
-        System.out.println("===");
-        System.out.println("commit " + commit.getID());
-        if (secPid != null) {
-            System.out.println(
-                    "Merge: "
-                            + commit.getParentID().substring(0, 7) + " "
-                            + secPid.substring(0, 7)
-            );
-        }
-        ZonedDateTime zonedDateTime = commit.getTime().atZone(ZoneId.systemDefault());
-        DateTimeFormatter formatter = DateTimeFormatter
-                .ofPattern("E MMM d HH:mm:ss yyyy Z").withLocale(Locale.ENGLISH);
-        System.out.println("Date: " + zonedDateTime.format(formatter));
-        System.out.println(commit.getMessage() + "\n");
-    }
 }

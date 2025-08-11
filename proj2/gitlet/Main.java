@@ -22,7 +22,6 @@ public class Main {
                 throw new GitletException("Not in an initialized Gitlet directory.");
             }
             command.execute(args);
-            save(repo);
         } catch (GitletException | IOException e) {
             System.out.println(e.getMessage());
             System.exit(0);
@@ -46,11 +45,5 @@ public class Main {
             case "merge": return new MergeCommand(repo);
             default: throw new GitletException("No command with that name exists.");
         }
-    }
-
-    /** Save app state to file. */
-    private static void save(Repository repo) {
-        repo.getBranchManager().save();
-        repo.getStageManager().save();
     }
 }

@@ -15,9 +15,10 @@ public class ResetCommand extends AbstractCommand {
         }
         String cid = args[1];
         Commit br = repo.getCommit(args[1]);
-        workSpaceManager.trackCheck(repo.getCommit("head"), br);
-        workSpaceManager.writeCWD(br);
+        repo.trackCheck(br);
+        repo.recoverFile(br);
         branchManager.createBranch(branchManager.getCurBranchName(), cid);
         stageManager.clearStageAdd();
+        branchManager.save();
     }
 }

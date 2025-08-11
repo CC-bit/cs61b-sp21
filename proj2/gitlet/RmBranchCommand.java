@@ -21,5 +21,6 @@ public class RmBranchCommand extends AbstractCommand {
             throw new GitletException("Cannot remove the current branchMan.");
         }
         branchManager.deleteBranch(branchName);
+        branchManager.save();
     }
 }

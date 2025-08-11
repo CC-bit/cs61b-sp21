@@ -33,5 +33,6 @@ public class CommitCommand extends AbstractCommand {
         branchManager.createBranch(branchManager.getCurBranchName(), newID);
         stageManager.clearStageAdd();
         commitManager.writeCommit(newCommit);
+        branchManager.save();
     }
 }

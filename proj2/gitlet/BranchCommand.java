@@ -18,5 +18,6 @@ public class BranchCommand extends AbstractCommand {
             throw new GitletException("A branchMan with that name already exists.");
         }
         branchManager.createBranch(branchName, branchManager.getBrCommitID("head"));
+        branchManager.save();
     }
 }

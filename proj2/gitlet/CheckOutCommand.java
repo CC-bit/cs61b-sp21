@@ -30,7 +30,7 @@ public class CheckOutCommand extends AbstractCommand {
             throw new GitletException("No need to checkout the current branch.");
         }
         Commit br = repo.getCommit(branchName);
-        workSpaceManager.trackCheck(repo.getCommit("head"), br); // failure case
+        repo.trackCheck(br); // failure case
         repo.switchBranch(branchName, br); // switch branch
     }
 
@@ -40,7 +40,7 @@ public class CheckOutCommand extends AbstractCommand {
         if (commit.isFileMissing(file)) {
             throw new GitletException("File does not exist in that commit.");
         }
-        workSpaceManager.writeCWD(commit, file);
+        repo.recoverFile(commit, file);
     }
 
 }

@@ -40,7 +40,6 @@ public class BranchManager {
         return branches.get(branchName);
     }
 
-
     private void load() {
         if (Files.exists(BRANCHES)) {
             @SuppressWarnings("unchecked")
@@ -50,7 +49,8 @@ public class BranchManager {
             this.branches = new TreeMap<>();
         }
     }
-    public void save() {
+
+    void save() {
         Utils.writeObject(BRANCHES, branches);
     }
 }

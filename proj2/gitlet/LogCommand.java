@@ -19,7 +19,7 @@ public class LogCommand extends AbstractCommand {
     }
 
     private void log(Commit commit) {
-        commitManager.display(commit);
+        repo.displayCommit(commit);
         if (commit.getID().equals(branchManager.getBrCommitID("init"))) {
             return;
         }

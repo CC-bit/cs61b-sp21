@@ -38,5 +38,6 @@ public class AddCommand extends AbstractCommand {
         }
         // execute
         stageManager.stageAdd(fileName);
+        stageManager.save();
     }
 }

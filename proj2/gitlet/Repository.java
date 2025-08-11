@@ -3,6 +3,9 @@ package gitlet;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static gitlet.Utils.*;
@@ -26,12 +29,14 @@ public class Repository {
     private final Path GITLET_DIR;
     private final Path CWD;
     private final Path STAGE_DIR;
+    private final Path BLOB_DIR;
 
     public Repository(Path cwd) {
         CWD = cwd;
         this.GITLET_DIR = CWD.resolve(".gitlet");
         this.workSpaceManager = new WorkSpaceManager(cwd);
         this.blobManager = new BlobManager(GITLET_DIR);
+        BLOB_DIR = blobManager.getBlobPath();
         this.commitManager = new CommitManager(GITLET_DIR);
         this.stageManager = new StageManager(GITLET_DIR);
         STAGE_DIR = stageManager.getStagePath();
@@ -58,7 +63,7 @@ public class Repository {
     }
 
     void switchBranch(String branchName, Commit br) throws IOException {
-        workSpaceManager.writeCWD(br);
+        recoverFile(br);
         branches.put("head", branchName);
         stageManager.clearStageAdd();
     }
@@ -79,6 +84,7 @@ public class Repository {
         Files.writeString(CWD.resolve(fileName), newFile);
         // add fileName
         stageManager.stageAdd(fileName);
+        stageManager.save();
     }
 
     /** Returns the commit instance of head or certain branchManager or commit id. */
@@ -112,6 +118,53 @@ public class Repository {
             }
         }
         return ancestors;
+    }
+
+    void recoverFile(Commit commit, String fileName) throws IOException {
+        // get hash from commit, get filePath from hash
+        String fileHash = commit.getFileHash(fileName);
+        Path source = BLOB_DIR.resolve(fileHash.substring(0, 2))
+                .resolve(fileHash.substring(2));
+        workSpaceManager.writeCWD(source, fileName);
+    }
+
+    void recoverFile(Commit commit) throws IOException {
+        workSpaceManager.clearCWD();
+        for (Map.Entry<String, String> entry : commit.blobEntrySet()) {
+            recoverFile(commit, entry.getKey());
+        }
+    }
+
+    /** Check if CWD file tracked. */
+    void trackCheck(Commit branch) {
+        List<String> cwdFiles = workSpaceManager.cwdFileList();
+        Commit cur = getCommit("head");
+        for (String file : cwdFiles) {
+            String hash = sha1((Object) readContents(CWD.resolve(file)));
+            if (cur.isFileMissing(file, hash) && branch.isFileMissing(file, hash)) {
+                throw new GitletException("There is an untracked file in the way;"
+                        + " delete it, or add and commit it first.");
+            }
+        }
+    }
+
+    /** Display information. */
+    public void displayCommit(Commit commit) {
+        String secPid = commit.getSecondParentID();
+        System.out.println("===");
+        System.out.println("commit " + commit.getID());
+        if (secPid != null) {
+            System.out.println(
+                    "Merge: "
+                            + commit.getParentID().substring(0, 7) + " "
+                            + secPid.substring(0, 7)
+            );
+        }
+        ZonedDateTime zonedDateTime = commit.getTime().atZone(ZoneId.systemDefault());
+        DateTimeFormatter formatter = DateTimeFormatter
+                .ofPattern("E MMM d HH:mm:ss yyyy Z").withLocale(Locale.ENGLISH);
+        System.out.println("Date: " + zonedDateTime.format(formatter));
+        System.out.println(commit.getMessage() + "\n");
     }
 
     Commit newCommit(Commit parent, Commit secParent, String msg)

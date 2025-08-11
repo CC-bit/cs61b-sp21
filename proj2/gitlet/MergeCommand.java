@@ -34,7 +34,7 @@ public class MergeCommand extends AbstractCommand {
         // FindCommand split point
         Commit curCommit = repo.getCommit("head");
         Commit brCommit = repo.getCommit(branchName);
-        workSpaceManager.trackCheck(curCommit, brCommit); // Failure case
+        repo.trackCheck(brCommit); // Failure case
         Commit splitPoint = repo.getCommit("init");
         Set<Commit> ancestors = repo.ancestorSet(curCommit);
         Queue<Commit> queue = new ArrayDeque<>();
@@ -74,7 +74,7 @@ public class MergeCommand extends AbstractCommand {
                         // case 1 file exits in 3 commit curCommit
                         // and split has same hash, brCommit diff
                         // checkout brCommit brFile
-                        workSpaceManager.writeCWD(brCommit, brFile);
+                        repo.recoverFile(brCommit, brFile);
                         // add fileName
                         stageManager.stageAdd(brFile);
                     } else if (!brHash.equals(curHash)) {
@@ -88,7 +88,7 @@ public class MergeCommand extends AbstractCommand {
             } else if (curNotContains) {
                 // case 5: file is in brCommit, not in split, not in curCommit
                 // checkout brCommit brFile
-                workSpaceManager.writeCWD(brCommit, brFile);
+                repo.recoverFile(brCommit, brFile);
                 // add brFile
                 stageManager.stageAdd(brFile);
             } else if (!brHash.equals(curHash)) {
@@ -123,5 +123,6 @@ public class MergeCommand extends AbstractCommand {
         // Create merge commit
         String msg = "Merged " + branchName + " into " + curBranchName + ".";
         repo.newCommit(curCommit, brCommit, msg);
+        stageManager.save();
     }
 }

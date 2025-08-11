@@ -30,5 +30,6 @@ public class InitCommand extends AbstractCommand {
         branchManager.createBranch("init", initHash);
         branchManager.createBranch("master", initHash);
         branchManager.createBranch("head", "master");
+        branchManager.save();
     }
 }

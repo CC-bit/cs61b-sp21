@@ -32,6 +32,7 @@ public class RmCommand extends AbstractCommand {
         if (!notCommited && Files.exists(rmFile)) {
             restrictedDelete(fileName);
             stageManager.stageRm(fileName);
+            stageManager.save();
         }
     }
 }
