@@ -263,12 +263,4 @@ class Utils {
         System.out.printf(msg, args);
         System.out.println();
     }
-
-    /** If condition is true, print the given msg and exit. */
-    static void failureCase(boolean cond, String msg) {
-        if (cond) {
-            System.out.println(msg);
-            System.exit(0);
-        }
-    }
 }
