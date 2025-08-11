@@ -8,12 +8,10 @@ import java.util.stream.Stream;
 
 import static gitlet.Utils.readObject;
 
-public class Find implements Command{
-    private final Path COMMIT_DIR;
+public class FindCommand extends AbstractCommand {
 
-    public Find(Repository repo) {
-        COMMIT_DIR = repo.getCommitMan().getCommitsPath();
-
+    public FindCommand(Repository repo) {
+        super(repo);
     }
 
     @Override
@@ -25,7 +23,7 @@ public class Find implements Command{
         AtomicInteger msgNum = new AtomicInteger(0);
         try (Stream<Path> stream = Files.walk(COMMIT_DIR)) {
             stream.filter(Files::isRegularFile).forEach(cPath -> {
-                CommitInstance commit = readObject(cPath.toFile(), CommitInstance.class);
+                Commit commit = readObject(cPath.toFile(), Commit.class);
                 if (cMsg.equals(commit.getMessage())) {
                     msgNum.incrementAndGet();
                     System.out.println(commit.getID());

@@ -8,13 +8,13 @@ import java.util.TreeMap;
 
 import static gitlet.Utils.*;
 
-public class Blob {
+public class BlobManager {
 
     /** The blob directory. */
     private final Path BLOB_DIR;
     private final Path STAGE_DIR;
 
-    public Blob(Path gitletPath) {
+    public BlobManager(Path gitletPath) {
         this.BLOB_DIR = gitletPath.resolve("blobs");
         this.STAGE_DIR = gitletPath.resolve("stage");
     }

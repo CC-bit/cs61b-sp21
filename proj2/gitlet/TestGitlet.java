@@ -1,11 +1,8 @@
 package gitlet;
 
-import org.junit.Test;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -43,36 +40,4 @@ public class TestGitlet {
 
     }
 
-    @Test
-    public void writeCWDTest() throws IOException {
-        String fileHash = "63ebcd876198409bd2b8bf58609678ba04f7303c";
-        Path c = Path.of("testing").resolve("test02-basic-checkout_5");
-        Path b = c.resolve(".gitlet").resolve("blobs");
-        Path dir = b.resolve(fileHash.substring(0,2));
-        if (!Files.isDirectory(dir)) {
-            System.out.println("Dir not exists: " + dir);
-        }
-        /*
-        Path CWD = Path.of("testing").resolve("test02-basic-checkout_4");
-        Path BLOB_DIR = CWD.resolve(".gitlet").resolve("blobs");
-        String fileName = "wug.txt";
-        String fileHash = "63ebcd876198409bd2b8bf58609678ba04f7303c";
-        Path dir = BLOB_DIR.resolve(fileHash.substring(0,2));
-        if (!Files.isDirectory(dir)) {
-            System.out.println("Dir not exists: " + dir);
-        }
-
-        Path source = BLOB_DIR.resolve(fileHash.substring(0,2)).resolve(fileHash.substring(2));
-        Path target = CWD.resolve(fileName);
-        if (!Files.exists(source)) {
-            throw new GitletException("Can't find blob file with hash: " + fileHash);
-        }
-        if (Files.isDirectory(target)) {
-            throw new GitletException("Target file is a directory.");
-        }
-        Files.copy(source, target, REPLACE_EXISTING);
-
-         */
-
-    }
 }

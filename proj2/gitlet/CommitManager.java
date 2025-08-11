@@ -13,24 +13,24 @@ import java.util.TreeMap;
 import static gitlet.Utils.plainFilenamesIn;
 import static gitlet.Utils.readObject;
 
-public class CommitMan {
+public class CommitManager {
     /** The commit directory. */
-    public final Path COMMIT_DIR;
+    private final Path COMMIT_DIR;
     /** A map of commit id to commit instance. */
-    private static final TreeMap<String, CommitInstance> commitCache = new TreeMap<>();
+    private final TreeMap<String, Commit> commitCache = new TreeMap<>();
 
-    public CommitMan(Path gitletPath) {
+    public CommitManager(Path gitletPath) {
         this.COMMIT_DIR = gitletPath.resolve("commits");
     }
     Path getCommitsPath() {
         return COMMIT_DIR;
     }
-    void cacheCommit(String id, CommitInstance commit) {
+    void cacheCommit(String id, Commit commit) {
         commitCache.put(id, commit);
     }
 
 
-    CommitInstance readCommit(String id) {
+    Commit readCommit(String id) {
         if (commitCache.containsKey(id)) {
             return commitCache.get(id);
         }
@@ -56,21 +56,21 @@ public class CommitMan {
         if (commitNum > 1) {
             throw new GitletException("Ambiguous commit id.");
         }
-        CommitInstance target = readObject(folder.resolve(commit), CommitInstance.class);
+        Commit target = readObject(folder.resolve(commit), Commit.class);
         commitCache.put(id, target);
         return target;
     }
 
 
     /** Serialize a commit into COMMIT_DIR. */
-    public void writeCommit(CommitInstance c) throws IOException {
+    public void writeCommit(Commit c) throws IOException {
         Path subHash = COMMIT_DIR.resolve(c.getID().substring(0, 2));
         Files.createDirectory(subHash);
         Utils.writeObject(subHash.resolve(c.getID().substring(2)), c);
     }
 
     /** Display information. */
-    public void display(CommitInstance commit) {
+    public void display(Commit commit) {
         String secPid = commit.getSecondParentID();
         System.out.println("===");
         System.out.println("commit " + commit.getID());
@@ -85,6 +85,6 @@ public class CommitMan {
         DateTimeFormatter formatter = DateTimeFormatter
                 .ofPattern("E MMM d HH:mm:ss yyyy Z").withLocale(Locale.ENGLISH);
         System.out.println("Date: " + zonedDateTime.format(formatter));
-        System.out.println(commit.getMessage()+ "\n");
+        System.out.println(commit.getMessage() + "\n");
     }
 }

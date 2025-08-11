@@ -6,23 +6,18 @@ import java.nio.file.Path;
 
 import static gitlet.Utils.readContents;
 
-public class Add implements Command{
-    private final Repository repo;
-    private final Stage stage;
-    private final Path CWD;
+public class AddCommand extends AbstractCommand {
 
-    public Add(Repository repo) {
-        this.repo = repo;
-        stage = repo.getStage();
-        CWD = repo.getWorkSpace().getCWDPath();
+    public AddCommand(Repository repo) {
+        super(repo);
     }
 
     /** add [file name]
      * Makes a copy of the file in CWD to the STAGE_DIR.
      * It will overwrite the old version in the STAGE_DIR.
      * If the version in CWD is identical to that in current commit,
-     * does not stage and removes it from STAGE_DIR(if there be).
-     * If the file is staged for rm before add, cancel the stage for rm.
+     * does not stageManager and removes it from STAGE_DIR(if there be).
+     * If the file is staged for rm before add, cancel the stageManager for rm.
      */
     @Override
     public void execute(String... args) throws IOException {
@@ -36,12 +31,12 @@ public class Add implements Command{
             throw new GitletException("File does not exist.");
         }
         String cwdFileHash = Utils.sha1((Object) readContents(filePath));
-        CommitInstance curCommit = repo.getCommit("head");
+        Commit curCommit = repo.getCommit("head");
         if (cwdFileHash.equals(curCommit.getFileHash(fileName))) {
-                stage.rmFile(fileName);
-                return;
+            stageManager.rmAddedFile(fileName);
+            return;
         }
         // execute
-        stage.addFile(fileName);
+        stageManager.stageAdd(fileName);
     }
 }

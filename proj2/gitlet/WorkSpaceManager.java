@@ -9,11 +9,11 @@ import java.util.Map;
 import static gitlet.Utils.*;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
-public class WorkSpace {
+public class WorkSpaceManager {
     private final Path CWD;
     private final Path BLOB_DIR;
 
-    public WorkSpace(Path cwd) {
+    public WorkSpaceManager(Path cwd) {
         this.CWD = cwd;
         this.BLOB_DIR = CWD.resolve(".gitlet").resolve("blobs");
     }
@@ -23,23 +23,23 @@ public class WorkSpace {
     }
 
     /** Check if CWD file tracked. */
-    void trackCheck(CommitInstance cur, CommitInstance branch) {
+    void trackCheck(Commit cur, Commit branch) {
         List<String> cwdFiles = plainFilenamesIn(CWD);
         assert cwdFiles != null;
         cwdFiles.remove(".gitlet");
         for (String file : cwdFiles) {
             String hash = sha1((Object) readContents(CWD.resolve(file)));
             if (cur.isFileMissing(file, hash) && branch.isFileMissing(file, hash)) {
-                throw new GitletException("There is an untracked file in the way;" +
-                        " delete it, or add and commit it first.");
+                throw new GitletException("There is an untracked file in the way;"
+                        + " delete it, or add and commit it first.");
             }
         }
     }
 
     /** Overwrite a file from commit to CWD. */
-    public void writeCWD(CommitInstance commit, String fileName) throws IOException {
+    public void writeCWD(Commit commit, String fileName) throws IOException {
         String fileHash = commit.getFileHash(fileName);
-        Path source = BLOB_DIR.resolve(fileHash.substring(0,2))
+        Path source = BLOB_DIR.resolve(fileHash.substring(0, 2))
                 .resolve(fileHash.substring(2));
         Path target = CWD.resolve(fileName);
         if (!Files.exists(source)) {
@@ -53,7 +53,7 @@ public class WorkSpace {
 
     /** Delete all files in CWD.
      * Overwrite all files from commit to CWD. */
-    public void writeCWD(CommitInstance c) throws IOException {
+    public void writeCWD(Commit c) throws IOException {
         List<String> cwdFile = plainFilenamesIn(CWD);
         if (cwdFile != null) {
             cwdFile.remove(".gitlet");

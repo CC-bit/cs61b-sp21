@@ -5,23 +5,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import static gitlet.Utils.*;
 
-public class Status implements Command{
-    private final Repository repo;
-    TreeMap<String, String> branches;
-    private final Stage stage;
-    private final Path STAGE_DIR;
-    private final Path CWD;
+public class StatusCommand extends AbstractCommand {
 
-    public Status(Repository repo) {
-        this.repo = repo;
-        branches = repo.getBranchMan().branches;
-        stage = repo.getStage();
-        CWD = repo.getWorkSpace().getCWDPath();
-        STAGE_DIR = stage.getStagePath();
+    public StatusCommand(Repository repo) {
+        super(repo);
     }
 
     @Override
@@ -29,33 +19,37 @@ public class Status implements Command{
         if (args.length != 1) {
             throw new GitletException("Incorrect operands.");
         }
-        List<String> stgFiles = plainFilenamesIn(stage.getStagePath());
+        List<String> stgFiles = plainFilenamesIn(STAGE_DIR);
         assert stgFiles != null;
         System.out.println("=== Branches ===");
-        System.out.println("*" + branches.get(branches.get("head")));
-        for (Map.Entry<String, String> entry : branches.entrySet()) {
-            if (entry.getKey().equals("head")) continue;
-            System.out.println(entry.getValue());
+        String curBranchName = branchManager.getCurBranchName();
+        System.out.println("*" + curBranchName);
+        for (Map.Entry<String, String> entry : branchManager.entrySet()) {
+            String key = entry.getKey();
+            if (key.equals("head") || key.equals("init") || key.equals(curBranchName)) {
+                continue;
+            }
+            System.out.println(key);
         }
         System.out.println("\n=== Staged Files ===");
         for (String file : stgFiles) {
             System.out.println(file);
         }
-        System.out.println("\nRemoved Files");
-        for (String file : stage.rmArea) {
+        System.out.println("\n=== Removed Files ===");
+        for (String file : stageManager.rmSet()) {
             System.out.println(file);
         }
-        System.out.println("\n=== Modifications Not Staged For CommitInstance ===");
-        CommitInstance currentCommit = repo.getCommit("head");
+        System.out.println("\n=== Modifications Not Staged For Commit ===");
+        Commit currentCommit = repo.getCommit("head");
         for (Map.Entry<String, String> entry : currentCommit.blobEntrySet()) {
             String file = entry.getKey();
             Path cwd = CWD.resolve(file);
             if (Files.exists(cwd)) {
                 String cwdHash = sha1((Object) readContents(cwd));
-                if (!entry.getValue().equals(cwdHash) && !stage.containsFile(file, cwdHash)) {
+                if (!entry.getValue().equals(cwdHash) && !stageManager.isStagedAdd(file, cwdHash)) {
                     System.out.println(file + " (modified)");
                 }
-            } else if (stage.rmArea.contains(file)) {
+            } else if (stageManager.isStagedRm(file)) {
                 System.out.println(file + " (deleted)");
             }
         }
@@ -76,7 +70,7 @@ public class Status implements Command{
         assert cwdFiles != null;
         cwdFiles.remove(".gitlet");
         for (String file : cwdFiles) {
-            if (currentCommit.isFileMissing(file) && !stage.containsFile(file)) {
+            if (currentCommit.isFileMissing(file) && !stageManager.isStagedAdd(file)) {
                 System.out.println(file);
             }
         }

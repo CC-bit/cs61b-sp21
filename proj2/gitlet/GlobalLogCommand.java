@@ -7,13 +7,10 @@ import java.util.stream.Stream;
 
 import static gitlet.Utils.readObject;
 
-public class GlobalLog implements Command{
-    private final Path COMMIT_DIR;
-    private final CommitMan commitMan;
+public class GlobalLogCommand extends AbstractCommand {
 
-    public GlobalLog(Repository repo) {
-        COMMIT_DIR = repo.getCommitMan().getCommitsPath();
-        commitMan = repo.getCommitMan();
+    public GlobalLogCommand(Repository repo) {
+        super(repo);
     }
 
     @Override
@@ -23,8 +20,8 @@ public class GlobalLog implements Command{
         }
         try (Stream<Path> stream = Files.walk(COMMIT_DIR)) {
             stream.filter(Files::isRegularFile).forEach(cPath -> {
-                CommitInstance commit = readObject(cPath.toFile(), CommitInstance.class);
-                commitMan.display(commit);
+                Commit commit = readObject(cPath.toFile(), Commit.class);
+                commitManager.display(commit);
             });
         }
     }

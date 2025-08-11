@@ -31,26 +31,26 @@ public class Main {
 
     private static Command getCommand(String name, Repository repo) {
         switch (name) {
-            case "init": return new Init(repo);
-            case "add": return new Add(repo);
-            case "commit": return new Commit(repo);
-            case "rm": return new Rm(repo);
-            case "log": return new Log(repo);
-            case "global-log": return new GlobalLog(repo);
-            case "find": return new Find(repo);
-            case "status": return new Status(repo);
-            case "checkout": return new CheckOut(repo);
-            case "branch": return new Branch(repo);
-            case "rm-branch": return new RmBranch(repo);
-            case "reset": return new Reset(repo);
-            case "merge": return new Merge(repo);
+            case "init": return new InitCommand(repo);
+            case "add": return new AddCommand(repo);
+            case "commit": return new CommitCommand(repo);
+            case "rm": return new RmCommand(repo);
+            case "log": return new LogCommand(repo);
+            case "global-log": return new GlobalLogCommand(repo);
+            case "find": return new FindCommand(repo);
+            case "status": return new StatusCommand(repo);
+            case "checkout": return new CheckOutCommand(repo);
+            case "branch": return new BranchCommand(repo);
+            case "rm-branch": return new RmBranchCommand(repo);
+            case "reset": return new ResetCommand(repo);
+            case "merge": return new MergeCommand(repo);
             default: throw new GitletException("No command with that name exists.");
         }
     }
 
     /** Save app state to file. */
     private static void save(Repository repo) {
-        repo.getBranchMan().save();
-        repo.getStage().save();
+        repo.getBranchManager().save();
+        repo.getStageManager().save();
     }
 }

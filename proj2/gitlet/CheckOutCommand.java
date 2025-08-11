@@ -1,17 +1,10 @@
 package gitlet;
 
 import java.io.IOException;
-import java.util.TreeMap;
 
-public class CheckOut implements Command{
-    TreeMap<String, String> branches;
-    private final WorkSpace workSpace;
-    private final Repository repo;
-
-    public CheckOut(Repository repo) {
-        this.repo = repo;
-        branches = repo.getBranchMan().branches;
-        workSpace = repo.getWorkSpace();
+public class CheckOutCommand extends AbstractCommand {
+    public CheckOutCommand(Repository repo) {
+        super(repo);
     }
 
     @Override
@@ -30,24 +23,24 @@ public class CheckOut implements Command{
 
     /** Checkout [branchMan name]. */
     public void checkout(String branchName) throws IOException {
-        if (!branches.containsKey(branchName)) {
+        if (!branchManager.containsBranch(branchName)) {
             throw new GitletException("No such branch exists.");
         }
-        if (branches.get("head").equals(branchName)) {
+        if (branchManager.getCurBranchName().equals(branchName)) {
             throw new GitletException("No need to checkout the current branch.");
         }
-        CommitInstance br = repo.getCommit(branchName);
-        workSpace.trackCheck(repo.getCommit("head"), br); // failure case
+        Commit br = repo.getCommit(branchName);
+        workSpaceManager.trackCheck(repo.getCommit("head"), br); // failure case
         repo.switchBranch(branchName, br); // switch branch
     }
 
     /** Checkout [commit id] -- [file name]. */
     public void checkout(String cid, String file) throws IOException {
-        CommitInstance commit = repo.getCommit(cid); // Failure case at CommitInstance.readCommit
+        Commit commit = repo.getCommit(cid); // Failure case at Commit.readCommit
         if (commit.isFileMissing(file)) {
             throw new GitletException("File does not exist in that commit.");
         }
-        workSpace.writeCWD(commit, file);
+        workSpaceManager.writeCWD(commit, file);
     }
 
 }
