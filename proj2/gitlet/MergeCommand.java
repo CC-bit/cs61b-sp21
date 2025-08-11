@@ -12,7 +12,6 @@ public class MergeCommand extends AbstractCommand {
         super(repo);
     }
 
-
     @Override
     public void execute(String... args) throws IOException {
         if (args.length != 2) {

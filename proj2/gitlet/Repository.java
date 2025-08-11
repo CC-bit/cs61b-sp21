@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+import static gitlet.Utils.*;
+
 
 /** Represents a gitlet repository.
  *  It's a good idea to give a description here of what else this Class
@@ -23,6 +25,7 @@ public class Repository {
     private final WorkSpaceManager workSpaceManager;
     private final Path GITLET_DIR;
     private final Path CWD;
+    private final Path STAGE_DIR;
 
     public Repository(Path cwd) {
         CWD = cwd;
@@ -31,6 +34,7 @@ public class Repository {
         this.blobManager = new BlobManager(GITLET_DIR);
         this.commitManager = new CommitManager(GITLET_DIR);
         this.stageManager = new StageManager(GITLET_DIR);
+        STAGE_DIR = stageManager.getStagePath();
         this.branchManager = new BranchManager(GITLET_DIR);
         branches = branchManager.branches;
     }
@@ -68,9 +72,9 @@ public class Repository {
     void conflictHandle(String fileName, String curHash, String brHash)
             throws IOException {
         String newFile = "<<<<<<< HEAD\n"
-                + blobManager.readBlob(curHash)
+                + blobManager.readBlobToString(curHash)
                 + "=======\n"
-                + blobManager.readBlob(brHash)
+                + blobManager.readBlobToString(brHash)
                 + ">>>>>>>\n";
         Files.writeString(CWD.resolve(fileName), newFile);
         // add fileName
@@ -113,7 +117,19 @@ public class Repository {
     Commit newCommit(Commit parent, Commit secParent, String msg)
             throws IOException {
         TreeMap<String, String> blobTree = parent.getBlobs();
-        blobTree.putAll(blobManager.writeBlob());
+        // get all files in stageAddArea into a map
+        List<String> stagedFiles = plainFilenamesIn(STAGE_DIR);
+        Map<Path, String> stagedFileMap = new TreeMap<>();
+        for (String fileName : stagedFiles) {
+            Path source = STAGE_DIR.resolve(fileName);
+            String fileHash = sha1((Object) readContents(source));
+            stagedFileMap.put(source, fileHash);
+            // put stage area file in blobTree
+            blobTree.put(fileName, fileHash);
+        }
+        // write files to blob area
+        blobManager.writeBlob(stagedFileMap);
+        // stage rm area
         for (String k : stageManager.rmSet()) {
             blobTree.remove(k);
         }
@@ -122,8 +138,8 @@ public class Repository {
         }
         return new Commit(parent, secParent, msg, blobTree);
     }
+
     Commit newCommit(Commit parent, String msg) throws IOException {
         return newCommit(parent, null, msg);
     }
-
 }
