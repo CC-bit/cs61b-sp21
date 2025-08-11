@@ -22,6 +22,7 @@ public class GlobalLogCommand extends AbstractCommand {
             stream.filter(Files::isRegularFile).forEach(cPath -> {
                 Commit commit = readObject(cPath.toFile(), Commit.class);
                 repo.displayCommit(commit);
+                System.out.println();
             });
         }
     }

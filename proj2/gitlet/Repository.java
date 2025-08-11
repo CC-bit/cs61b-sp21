@@ -140,7 +140,7 @@ public class Repository {
         List<String> cwdFiles = workSpaceManager.cwdFileList();
         Commit cur = getCommit("head");
         for (String file : cwdFiles) {
-            String hash = sha1((Object) readContents(CWD.resolve(file)));
+            String hash = sha1(file, (Object) readContents(CWD.resolve(file)));
             if (cur.isFileMissing(file, hash) && branch.isFileMissing(file, hash)) {
                 throw new GitletException("There is an untracked file in the way;"
                         + " delete it, or add and commit it first.");
@@ -164,7 +164,7 @@ public class Repository {
         DateTimeFormatter formatter = DateTimeFormatter
                 .ofPattern("E MMM d HH:mm:ss yyyy Z").withLocale(Locale.ENGLISH);
         System.out.println("Date: " + zonedDateTime.format(formatter));
-        System.out.println(commit.getMessage() + "\n");
+        System.out.println(commit.getMessage());
     }
 
     Commit newCommit(Commit parent, Commit secParent, String msg)
@@ -175,7 +175,7 @@ public class Repository {
         Map<Path, String> stagedFileMap = new TreeMap<>();
         for (String fileName : stagedFiles) {
             Path source = STAGE_DIR.resolve(fileName);
-            String fileHash = sha1((Object) readContents(source));
+            String fileHash = sha1(fileName, (Object) readContents(source));
             stagedFileMap.put(source, fileHash);
             // put stage area file in blobTree
             blobTree.put(fileName, fileHash);

@@ -1,36 +1,19 @@
 package gitlet;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
+import org.junit.Test;
+
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
-import static gitlet.Utils.*;
+import static gitlet.Utils.readContents;
+import static gitlet.Utils.sha1;
 
 public class TestGitlet {
 
-    @org.junit.Test
-    public void addTest() throws IOException {
-        File stage = join("testing", "add_4", ".gitlet", "stage", "wug.txt");
-        String stageHash = sha1((Object) readContents(stage));
-        System.out.println("stage hash: " + stageHash);
-
-        File src = join("testing", "src", "wug.txt");
-        File blob = join("testing", "add_4", ".gitlet", "blob", "wug.txt");
-        String srcHash = sha1((Object) readContents(src));
-        Files.copy(
-                src.toPath(),
-                blob.toPath()
-        );
-        String blobHash = sha1((Object) readContents(blob));
-        System.out.println("src hash:   " + srcHash);
-        System.out.println("blob hash:  " + blobHash);
-    }
-
-    @org.junit.Test
+    @Test
     public void dateTime() {
         Instant instant = Instant.now();
         ZonedDateTime dateTime = instant.atZone(ZoneId.systemDefault());
@@ -38,6 +21,15 @@ public class TestGitlet {
         String print = dateTime.format(formatter);
         System.out.println(print);
 
+    }
+
+    @Test
+    public void rmAreaTest() {
+        Path cwd = Path.of("testing").resolve("test23-global-log_0");
+        Repository repo = new Repository(cwd);
+        Path hWug = cwd.resolve("h.txt");
+        String hHash = sha1((Object) readContents(hWug));
+        System.out.println(hHash);
     }
 
 }

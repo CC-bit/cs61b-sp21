@@ -3,10 +3,8 @@ package gitlet;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static gitlet.Utils.*;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -16,7 +14,7 @@ public class StageManager {
     private final Path STAGE_DIR;
     private final Path CWD;
     private final Path STAGERM;
-    private ArrayList<String> rmArea;
+    private HashSet<String> rmArea;
 
     public StageManager(Path gitletDir) {
         this.STAGE_DIR = gitletDir.resolve("stage");
@@ -29,16 +27,17 @@ public class StageManager {
         return STAGE_DIR;
     }
 
-    private void load() {
+    void load() {
         if (Files.exists(STAGERM)) {
             @SuppressWarnings("unchecked")
-            ArrayList<String> rmTree = Utils.readObject(STAGERM, ArrayList.class);
+            HashSet<String> rmTree = Utils.readObject(STAGERM, HashSet.class);
             this.rmArea = rmTree;
         } else {
-            this.rmArea = new ArrayList<>();
+            this.rmArea = new HashSet<>();
         }
     }
-    public void save() {
+
+    void save() {
         Utils.writeObject(STAGERM, rmArea);
     }
 
@@ -47,12 +46,15 @@ public class StageManager {
      */
     void stageAdd(String fileName) throws IOException {
         Files.copy(CWD.resolve(fileName), STAGE_DIR.resolve(fileName), REPLACE_EXISTING);
-        rmArea.remove(fileName);
+        rmRmdFile(fileName);
     }
     void stageRm(String fileName) {
         rmArea.add(fileName);
     }
-    Set<String> rmSet() {
+    void rmRmdFile(String fileName) {
+        rmArea.remove(fileName);
+    }
+    HashSet<String> rmSet() {
         return new HashSet<>(rmArea);
     }
 
@@ -74,7 +76,7 @@ public class StageManager {
         List<String> allFiles = plainFilenamesIn(STAGE_DIR);
         assert allFiles != null;
         return (allFiles.contains(file)
-                && hash.equals(sha1((Object) readContents(STAGE_DIR.resolve(file)))));
+                && hash.equals(sha1(file, (Object) readContents(STAGE_DIR.resolve(file)))));
     }
     boolean isStagedRm(String fileName) {
         return rmArea.contains(fileName);
@@ -95,5 +97,9 @@ public class StageManager {
         for (String file : allFiles) {
             rmAddedFile(file);
         }
+    }
+
+    void clearStageRm() {
+        rmArea = new HashSet<>();
     }
 }

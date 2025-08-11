@@ -30,14 +30,14 @@ public class AddCommand extends AbstractCommand {
         if (!Files.exists(filePath)) {
             throw new GitletException("File does not exist.");
         }
-        String cwdFileHash = Utils.sha1((Object) readContents(filePath));
+        String cwdFileHash = Utils.sha1(fileName, (Object) readContents(filePath));
         Commit curCommit = repo.getCommit("head");
         if (cwdFileHash.equals(curCommit.getFileHash(fileName))) {
             stageManager.rmAddedFile(fileName);
-            return;
+        } else {
+            stageManager.stageAdd(fileName);
         }
-        // execute
-        stageManager.stageAdd(fileName);
+        stageManager.rmRmdFile(fileName);
         stageManager.save();
     }
 }

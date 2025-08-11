@@ -45,19 +45,19 @@ public class StatusCommand extends AbstractCommand {
             String file = entry.getKey();
             Path cwd = CWD.resolve(file);
             if (Files.exists(cwd)) {
-                String cwdHash = sha1((Object) readContents(cwd));
+                String cwdHash = sha1(file, (Object) readContents(cwd));
                 if (!entry.getValue().equals(cwdHash) && !stageManager.isStagedAdd(file, cwdHash)) {
                     System.out.println(file + " (modified)");
                 }
-            } else if (stageManager.isStagedRm(file)) {
+            } else if (!stageManager.isStagedRm(file)) {
                 System.out.println(file + " (deleted)");
             }
         }
         for (String file : stgFiles) {
-            String stgHash = sha1((Object) readContents(STAGE_DIR.resolve(file)));
+            String stgHash = sha1(file, (Object) readContents(STAGE_DIR.resolve(file)));
             Path cwd = CWD.resolve(file);
             if (Files.exists(cwd)) {
-                String cwdHash = sha1((Object) readContents(cwd));
+                String cwdHash = sha1(file, (Object) readContents(cwd));
                 if (!stgHash.equals(cwdHash)) {
                     System.out.println(file + " (modified)");
                 }
