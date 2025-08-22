@@ -3,14 +3,13 @@ package gitlet;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author dhzp
  */
 public class Main {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         try {
             if (args.length == 0) {
                 throw new GitletException("Please enter a command.");
