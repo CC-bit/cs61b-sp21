@@ -95,26 +95,6 @@ public class Repository {
         return commitManager.readCommit(id);
     }
 
-    /** Put all ancestors of the commit into a set and return it. */
-    Set<Commit> ancestorSet(Commit cur) {
-        Set<Commit> ancestors = new HashSet<>();
-        Queue<Commit> queue = new ArrayDeque<>();
-        queue.offer(cur);
-        while (queue.peek() != null) {
-            Commit commit = queue.poll();
-            ancestors.add(commit);
-            Commit parent = getCommit(commit.getParentID());
-            Commit secParent = getCommit(commit.getSecondParentID());
-            if (parent != null && !ancestors.contains(parent)) {
-                queue.offer(parent);
-            }
-            if (secParent != null && !ancestors.contains(secParent)) {
-                queue.offer(secParent);
-            }
-        }
-        return ancestors;
-    }
-
     void recoverFile(Commit commit, String fileName) throws IOException {
         // get hash from commit, get filePath from hash
         String fileHash = commit.getFileHash(fileName);
@@ -136,7 +116,7 @@ public class Repository {
         Commit cur = getCommit("head");
         for (String file : cwdFiles) {
             String cwdHash = sha1(file, readContents(CWD.resolve(file)));
-            if (!branch.isFileMissing(file) && cur.isFileMissing(file, cwdHash)){
+            if (!branch.isFileMissing(file) && cur.isFileMissing(file, cwdHash)) {
                 throw new GitletException("There is an untracked file in the way;"
                         + " delete it, or add and commit it first.");
             }

@@ -5,6 +5,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.junit.Assert.*;
 
@@ -31,22 +32,17 @@ public class TestGitlet {
         }
     }
 
-    private void callMain(Path cwd, String... args) {
-        try {
-            if (args.length == 0) {
-                throw new GitletException("Please enter a command.");
-            }
-            String commandName = args[0];
-            Repository repo = new Repository(cwd);
-            Command command = getCommand(commandName, repo);
-            if (!commandName.equals("init") && !Files.exists(cwd.resolve(".gitlet"))) {
-                throw new GitletException("Not in an initialized Gitlet directory.");
-            }
-            command.execute(args);
-        } catch (GitletException | IOException e) {
-            System.out.println(e.getMessage());
-            System.exit(0);
+    private void callMain(Path cwd, String... args) throws IOException {
+        if (args.length == 0) {
+            throw new GitletException("Please enter a command.");
         }
+        String commandName = args[0];
+        Repository repo = new Repository(cwd);
+        Command command = getCommand(commandName, repo);
+        if (!commandName.equals("init") && !Files.exists(cwd.resolve(".gitlet"))) {
+            throw new GitletException("Not in an initialized Gitlet directory.");
+        }
+        command.execute(args);
     }
 
     private void plus(Path cwd, String tar, String src) throws IOException {
@@ -89,26 +85,66 @@ public class TestGitlet {
     }
 
     @Test
-    public void mergeNoConflict() throws IOException {
-        Path cwd = createCwd("mergeNoConflict");
-        setUp2(cwd);
-        callMain(cwd, "branch", "other");
-        plus(cwd, "h.txt", "wug2.txt");
-        callMain(cwd, "add", "h.txt");
-        callMain(cwd, "rm", "g.txt");
-        callMain(cwd, "commit", "Add h.txt and remove g.txt");
-        callMain(cwd, "checkout", "other");
-        callMain(cwd, "rm", "f.txt");
-        plus(cwd, "k.txt", "wug3.txt");
-        callMain(cwd, "add", "k.txt");
-        callMain(cwd, "commit", "Add k.txt and remove f.txt");
-        callMain(cwd, "checkout", "master");
-        callMain(cwd, "merge", "other");
+    public void mergeNoConflict() {
+        try {
+            Path cwd = createCwd("mergeNoConflict");
+            setUp2(cwd);
+            callMain(cwd, "branch", "other");
+            plus(cwd, "h.txt", "wug2.txt");
+            callMain(cwd, "add", "h.txt");
+            callMain(cwd, "rm", "g.txt");
+            callMain(cwd, "commit", "Add h.txt and remove g.txt");
+            callMain(cwd, "checkout", "other");
+            callMain(cwd, "rm", "f.txt");
+            plus(cwd, "k.txt", "wug3.txt");
+            callMain(cwd, "add", "k.txt");
+            callMain(cwd, "commit", "Add k.txt and remove f.txt");
+            callMain(cwd, "checkout", "master");
+            callMain(cwd, "merge", "other");
+            star(cwd, "f.txt");
+            star(cwd, "g.txt");
+            eq(cwd, "h.txt", "wug2.txt");
+            eq(cwd, "k.txt", "wug3.txt");
+            callMain(cwd, "log");
+            callMain(cwd, "status"); // should be blank status
+        } catch (GitletException | IOException e) {
+            System.out.println(e.getMessage());
+            System.exit(0);
+        }
+    }
+
+    @Test
+    public void specialMergeCases() throws IOException {
+        Path cwd = createCwd("specialMergeCases");
+        try {
+            setUp2(cwd);
+            callMain(cwd, "branch", "b1");
+            plus(cwd, "h.txt", "wug2.txt");
+            callMain(cwd, "add", "h.txt");
+            callMain(cwd, "commit", "Add h.txt");
+            callMain(cwd, "branch", "b2");
+            callMain(cwd, "rm", "f.txt");
+            callMain(cwd, "commit", "remove f.txt");
+        } catch (GitletException | IOException e) {
+            System.out.println(e.getMessage());
+            System.exit(0);
+        }
+        try {
+            callMain(cwd, "merge", "b1");
+        } catch (GitletException e) {
+            System.out.println(e.getMessage());
+            assertEquals("Given branch is an ancestor of the current branch.",
+                    e.getMessage());
+        }
+        callMain(cwd, "checkout", "b2");
+        eq(cwd,"f.txt", "wug.txt");
+        try {
+            callMain(cwd, "merge", "master");
+        } catch (GitletException e) {
+            System.out.println(e.getMessage());
+            assertEquals("Current branch fast-forwarded.",
+                    e.getMessage());
+        }
         star(cwd, "f.txt");
-        star(cwd, "g.txt");
-        eq(cwd, "h.txt", "wug2.txt");
-        eq(cwd, "k.txt", "wug3.txt");
-        callMain(cwd, "log");
-        callMain(cwd, "status"); // should be blank status
     }
 }
