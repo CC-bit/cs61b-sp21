@@ -59,10 +59,11 @@ public class CommitManager {
 
 
     /** Serialize a commit into COMMIT_DIR. */
-    public void writeCommit(Commit c) throws IOException {
-        Path subHash = COMMIT_DIR.resolve(c.getID().substring(0, 2));
-        Files.createDirectory(subHash);
-        Utils.writeObject(subHash.resolve(c.getID().substring(2)), c);
+    public void writeCommit(Commit commit) throws IOException {
+        String cid = commit.getID();
+        Path folder = COMMIT_DIR.resolve(cid.substring(0, 2));
+        Files.createDirectories(folder);
+        Utils.writeObject(folder.resolve(cid.substring(2)), commit);
     }
 
 }

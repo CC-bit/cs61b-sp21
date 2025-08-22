@@ -12,9 +12,9 @@ public class CheckOutCommand extends AbstractCommand {
         int l = args.length;
         if (l == 2) {
             checkout(args[1]);
-        } else if (l == 3) {
+        } else if (l == 3 && args[1].equals("--")) {
             checkout("head", args[2]);
-        } else if (l == 4) {
+        } else if (l == 4 && args[2].equals("--")) {
             checkout(args[1], args[3]);
         } else {
             throw new GitletException("Incorrect operands.");
@@ -32,6 +32,7 @@ public class CheckOutCommand extends AbstractCommand {
         Commit br = repo.getCommit(branchName);
         repo.trackCheck(br); // failure case
         repo.switchBranch(branchName, br); // switch branch
+        branchManager.save();
     }
 
     /** Checkout [commit id] -- [file name]. */

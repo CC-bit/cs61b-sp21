@@ -10,15 +10,16 @@ import java.nio.file.Paths;
  */
 public class Main {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         try {
             if (args.length == 0) {
                 throw new GitletException("Please enter a command.");
             }
             String commandName = args[0];
-            Repository repo = new Repository(Path.of(System.getProperty("user.dir")));
+            Path cwd = Path.of(System.getProperty("user.dir"));
+            Repository repo = new Repository(cwd);
             Command command = getCommand(commandName, repo);
-            if (!commandName.equals("init") && !Files.exists(Paths.get(".gitlet"))) {
+            if (!commandName.equals("init") && !Files.exists(cwd.resolve(".gitlet"))) {
                 throw new GitletException("Not in an initialized Gitlet directory.");
             }
             command.execute(args);

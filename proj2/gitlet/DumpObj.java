@@ -16,7 +16,7 @@ import java.io.File;
  *            ...
  *            @Override
  *            public void dump() {
- *               System.out.printf("size: %d%nmapping: %s%n", _size, _mapping);
+ *               System.out.printf("size: %d.txt%nmapping: %s%n", _size, _mapping);
  *            }
  *            ...
  *            int _size;

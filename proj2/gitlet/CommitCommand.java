@@ -27,13 +27,7 @@ public class CommitCommand extends AbstractCommand {
             throw new GitletException("Please enter a commit message.");
         }
         Commit parent = repo.getCommit("head");
-        Commit newCommit = repo.newCommit(parent, msg);
-        String newID = newCommit.getID();
-        commitManager.cacheCommit(newID, newCommit);
-        branchManager.createBranch(branchManager.getCurBranchName(), newID);
-        stageManager.clearStageAdd();
-        stageManager.clearStageRm();
-        commitManager.writeCommit(newCommit);
+        repo.commitGraph(repo.newCommit(parent, msg));
         stageManager.save();
         branchManager.save();
     }

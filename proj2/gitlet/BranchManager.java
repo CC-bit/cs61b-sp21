@@ -10,7 +10,7 @@ public class BranchManager {
     /** The branches file. */
     private final Path BRANCHES;
     /** A map of branches names like "master" to commit hash. */
-    TreeMap<String, String> branches;
+    private TreeMap<String, String> branches;
 
     public BranchManager(Path gitletPath) {
         this.BRANCHES = gitletPath.resolve("branches");

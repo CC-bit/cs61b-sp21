@@ -17,7 +17,7 @@ public class RmBranchCommand extends AbstractCommand {
         if (!branchManager.containsBranch(branchName)) {
             throw new GitletException("A branchMan with that name does not exist.");
         }
-        if (branchManager.getBrCommitID("head").equals(branchName)) {
+        if (branchManager.getCurBranchName().equals(branchName)) {
             throw new GitletException("Cannot remove the current branchMan.");
         }
         branchManager.deleteBranch(branchName);

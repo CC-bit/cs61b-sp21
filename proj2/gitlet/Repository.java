@@ -22,7 +22,6 @@ public class Repository {
     /** The current working directory. */
     private final BlobManager blobManager;
     private final BranchManager branchManager;
-    private final TreeMap<String, String> branches;
     private final CommitManager commitManager;
     private final StageManager stageManager;
     private final WorkSpaceManager workSpaceManager;
@@ -41,7 +40,6 @@ public class Repository {
         this.stageManager = new StageManager(GITLET_DIR);
         STAGE_DIR = stageManager.getStagePath();
         this.branchManager = new BranchManager(GITLET_DIR);
-        branches = branchManager.branches;
     }
     Path getGitletPath() {
         return GITLET_DIR;
@@ -64,13 +62,8 @@ public class Repository {
 
     void switchBranch(String branchName, Commit br) throws IOException {
         recoverFile(br);
-        branches.put("head", branchName);
+        branchManager.createBranch("head", branchName);
         stageManager.clearStageAdd();
-    }
-
-    void switchBranch(String branchName) throws IOException {
-        Commit br = getCommit(branchName);
-        switchBranch(branchName, br);
     }
 
     /** Handling conflict file, add it to stageManager. **/
@@ -89,15 +82,17 @@ public class Repository {
 
     /** Returns the commit instance of head or certain branchManager or commit id. */
     Commit getCommit(String id) {
-        // if id is a name(head or branchManager name), cid = get(id), else(id is hash) cid = id
-        if (id.equals("head")) {
-            id = branches.get(id);
-        }
         if (id == null) {
             return null;
         }
-        String cid = branches.getOrDefault(id, id);
-        return commitManager.readCommit(cid);
+        // if id is a name(head or branchManager name), cid = get(id), else(id is hash) cid = id
+        if (id.equals("head")) {
+            id = branchManager.getCurBranchName();
+        }
+        if (branchManager.containsBranch(id)) {
+            id = branchManager.getBrCommitID(id);
+        }
+        return commitManager.readCommit(id);
     }
 
     /** Put all ancestors of the commit into a set and return it. */
@@ -110,10 +105,10 @@ public class Repository {
             ancestors.add(commit);
             Commit parent = getCommit(commit.getParentID());
             Commit secParent = getCommit(commit.getSecondParentID());
-            if (!ancestors.contains(parent)) {
+            if (parent != null && !ancestors.contains(parent)) {
                 queue.offer(parent);
             }
-            if (!ancestors.contains(secParent)) {
+            if (secParent != null && !ancestors.contains(secParent)) {
                 queue.offer(secParent);
             }
         }
@@ -140,8 +135,8 @@ public class Repository {
         List<String> cwdFiles = workSpaceManager.cwdFileList();
         Commit cur = getCommit("head");
         for (String file : cwdFiles) {
-            String hash = sha1(file, (Object) readContents(CWD.resolve(file)));
-            if (cur.isFileMissing(file, hash) && branch.isFileMissing(file, hash)) {
+            String cwdHash = sha1(file, readContents(CWD.resolve(file)));
+            if (!branch.isFileMissing(file) && cur.isFileMissing(file, cwdHash)){
                 throw new GitletException("There is an untracked file in the way;"
                         + " delete it, or add and commit it first.");
             }
@@ -175,7 +170,7 @@ public class Repository {
         Map<Path, String> stagedFileMap = new TreeMap<>();
         for (String fileName : stagedFiles) {
             Path source = STAGE_DIR.resolve(fileName);
-            String fileHash = sha1(fileName, (Object) readContents(source));
+            String fileHash = sha1(fileName, readContents(source));
             stagedFileMap.put(source, fileHash);
             // put stage area file in blobTree
             blobTree.put(fileName, fileHash);
@@ -194,5 +189,15 @@ public class Repository {
 
     Commit newCommit(Commit parent, String msg) throws IOException {
         return newCommit(parent, null, msg);
+    }
+
+    /** Add the given commit to gitlet commit graph and write it to file. */
+    void commitGraph(Commit newCommit) throws IOException {
+        String newID = newCommit.getID();
+        commitManager.cacheCommit(newID, newCommit);
+        branchManager.createBranch(branchManager.getCurBranchName(), newID);
+        stageManager.clearStageAdd();
+        stageManager.clearStageRm();
+        commitManager.writeCommit(newCommit);
     }
 }

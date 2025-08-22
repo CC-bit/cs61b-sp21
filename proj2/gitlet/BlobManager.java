@@ -26,6 +26,9 @@ public class BlobManager {
             if (!Files.isDirectory(folder)) {
                 Files.createDirectory(folder);
             }
+            if (Files.exists(target)) {
+                return;
+            }
             Files.copy(sourceFile, target);
         }
     }

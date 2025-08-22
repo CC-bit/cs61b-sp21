@@ -29,10 +29,12 @@ public class RmCommand extends AbstractCommand {
             throw new GitletException("No reason to remove the file.");
         }
         stageManager.rmAddedFile(fileName);
-        if (!notCommited && Files.exists(rmFile)) {
-            restrictedDelete(fileName);
+        if (!notCommited) {
+            stageManager.stageRm(fileName);
+            if (Files.exists(rmFile)) {
+                restrictedDelete(CWD.resolve(fileName));
+            }
         }
-        stageManager.stageRm(fileName);
         stageManager.save();
     }
 }

@@ -46,7 +46,7 @@ public class WorkSpaceManager {
         if (cwdFile != null) {
             cwdFile.remove(".gitlet");
             for (String file : cwdFile) {
-                restrictedDelete(file);
+                restrictedDelete(CWD.resolve(file));
             }
         }
     }

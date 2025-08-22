@@ -31,7 +31,7 @@ public class MergeCommand extends AbstractCommand {
         if (curBranchName.equals(branchName)) {
             throw new GitletException("Cannot merge a branch with itself.");
         }
-        // FindCommand split point
+        // Find split point
         Commit curCommit = repo.getCommit("head");
         Commit brCommit = repo.getCommit(branchName);
         repo.trackCheck(brCommit); // Failure case
@@ -47,11 +47,12 @@ public class MergeCommand extends AbstractCommand {
             }
             Commit parent = repo.getCommit(commit.getParentID());
             Commit secParent = repo.getCommit(commit.getSecondParentID());
-            if (parent == null || secParent == null) {
-                break;
+            if (parent != null) {
+                queue.offer(parent);
             }
-            queue.offer(parent);
-            queue.offer(secParent);
+            if (secParent != null) {
+                queue.offer(secParent);
+            }
         }
         if (splitPoint.getID().equals(branchName)) {
             throw new GitletException("Given branch is an ancestor of the current branch.");
@@ -61,6 +62,7 @@ public class MergeCommand extends AbstractCommand {
             throw new GitletException("Current branch fast-forwarded.");
         }
         // file handle
+        boolean conflict = false;
         for (Map.Entry<String, String> entry : brCommit.blobEntrySet()) {
             String brFile = entry.getKey();
             String brHash = entry.getValue();
@@ -68,7 +70,7 @@ public class MergeCommand extends AbstractCommand {
             String curHash = curCommit.getFileHash(brFile);
             boolean curNotContains = curCommit.isFileMissing(brFile);
             boolean splitNotContains = splitPoint.isFileMissing(brFile);
-            if (!splitNotContains && !brHash.equals(splitHash)) {
+            if (!splitNotContains && !brHash.equals(splitHash)) { // in split with diff hash
                 if (!curNotContains) {
                     if (curHash.equals(splitHash)) {
                         // case 1 file exits in 3 commit curCommit
@@ -79,20 +81,26 @@ public class MergeCommand extends AbstractCommand {
                         stageManager.stageAdd(brFile);
                     } else if (!brHash.equals(curHash)) {
                         // case 8.1: in split, curCommit and brCommit has different hash
+                        conflict = true;
                         repo.conflictHandle(brFile, curHash, brHash);
                     }
                 } else {
                     // case 8.2: file absent in curCommit
+                    conflict = true;
                     repo.conflictHandle(brFile, null, brHash);
                 }
-            } else if (curNotContains) {
+            } else if (!splitNotContains) { // in split with same hash
+                // case 7 and case 2
+                continue;
+            } else if (curNotContains) { // not in split - not in cur
                 // case 5: file is in brCommit, not in split, not in curCommit
                 // checkout brCommit brFile
                 repo.recoverFile(brCommit, brFile);
                 // add brFile
                 stageManager.stageAdd(brFile);
-            } else if (!brHash.equals(curHash)) {
+            } else if (!brHash.equals(curHash)) { // not in split - in cur
                 // case 8.3: absent in split, and diff hash between curCommit and brCommit
+                conflict = true;
                 repo.conflictHandle(brFile, curHash, brHash);
             }
         }
@@ -108,21 +116,28 @@ public class MergeCommand extends AbstractCommand {
                     if (brNotContains) {
                         // case 6: rm curFile
                         stageManager.rmAddedFile(curFile);
-                        restrictedDelete(curFile);
+                        restrictedDelete(CWD.resolve(curFile));
                         stageManager.stageRm(curFile);
                     }
                 } else if (brNotContains) {
                     // case 8.2: file absent in brCommit
+                    conflict = true;
                     repo.conflictHandle(curFile, curHash, brHash);
                 }
             } else if (!brNotContains && !curHash.equals(brHash)) {
                 // case 8.3: absent in split, and diff hash between curCommit and brCommit
+                conflict = true;
                 repo.conflictHandle(curFile, curHash, brHash);
             }
         }
         // Create merge commit
         String msg = "Merged " + branchName + " into " + curBranchName + ".";
-        repo.newCommit(curCommit, brCommit, msg);
+        repo.commitGraph(repo.newCommit(curCommit, brCommit, msg));
+        //branchManager.deleteBranch(branchName);
         stageManager.save();
+        branchManager.save();
+        if (conflict) {
+            System.out.println("Encountered a merge conflict.");
+        }
     }
 }
