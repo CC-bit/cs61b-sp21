@@ -19,14 +19,14 @@ public class PushCommand extends AbstractCommand {
         }
         Commit cur = repo.getCommit("head");
         Path remotePath = remoteManager.getRemoteAbsolutePath(args[1]);
+        if (!Files.exists(remotePath.resolve(".gitlet"))) {
+            throw new GitletException("Remote directory not found.");
+        }
         Repository remoteRepo = new Repository(remotePath);
         Commit remoteHead = remoteRepo.getCommit("head");
         Set<String> curAncestors = repo.ancestorHashSet(cur);
         if (!curAncestors.contains(remoteHead.getID())) {
             throw new GitletException("Please pull down remote changes before pushing.");
-        }
-        if (!Files.exists(remotePath.resolve(".gitlet"))) {
-            throw new GitletException("Remote directory not found.");
         }
         remoteRepo.commitGraph(remoteRepo.newCommit(BLOB_DIR, cur, remoteRepo.getCommit(args[2])));
         remoteRepo.getStageManager().save();

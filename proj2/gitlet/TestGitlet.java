@@ -64,11 +64,11 @@ public class TestGitlet {
         assertFalse(Files.exists(file));
     }
 
-    private void eq(Path cwd, String cwdFile, String srcFile) {
+    private void eq(Path cwd, String cwdFile, String srcFile) throws IOException {
         Path cFile = cwd.resolve(cwdFile);
         Path rFile = TEST_DIR.resolve("src").resolve(srcFile);
-        String cwdHash = Utils.sha1(Utils.readContents(cFile));
-        String srcHash = Utils.sha1(Utils.readContents(rFile));
+        String cwdHash = Utils.sha1((Object) Files.readAllBytes(cFile));
+        String srcHash = Utils.sha1((Object) Files.readAllBytes(rFile));
         assertEquals(cwdHash, srcHash);
     }
 
@@ -119,6 +119,41 @@ public class TestGitlet {
             System.out.println(e.getMessage());
             System.exit(0);
         }
+    }
+
+    @Test
+    public void mergeConflicts() throws IOException {
+        Path cwd = createCwd("mergeConflicts");
+        setUp2(cwd);
+        callMain(cwd, "branch", "other");
+        plus(cwd, "h.txt", "wug2.txt");
+        callMain(cwd, "add", "h.txt");
+        callMain(cwd, "rm", "g.txt");
+        plus(cwd, "f.txt", "wug2.txt");
+        callMain(cwd, "add", "f.txt");
+        callMain(cwd, "commit", "Add h.txt, remove g.txt, and change f.txt");
+        callMain(cwd, "checkout", "other");
+        plus(cwd, "f.txt", "notwug.txt");
+        callMain(cwd, "add", "f.txt");
+        plus(cwd, "k.txt", "wug3.txt");
+        callMain(cwd, "add", "k.txt");
+        callMain(cwd, "commit", "Add k.txt and modify f.txt");
+        callMain(cwd, "checkout", "master");
+        callMain(cwd, "log");
+        // D MASTER_HEAD "${1}"
+        try {
+            callMain(cwd, "merge", "other");
+        } catch (GitletException e) {
+            assertEquals("Encountered a merge conflict.", e.getMessage());
+        }
+
+        star(cwd, "g.txt");
+        eq(cwd, "h.txt", "wug2.txt");
+        eq(cwd, "k.txt", "wug3.txt");
+        eq(cwd, "f.txt", "conflict1.txt");
+
+        callMain(cwd, "log");
+        callMain(cwd, "status");
     }
 
     @Test
@@ -209,7 +244,7 @@ public class TestGitlet {
 
         */
         String R1_TWO = captureLog(d1, 1); // sha1 of "two"
-        String R1_INIT = captureLog(d1, 2); // sha1 of "init"
+        //String R1_INIT = captureLog(d1, 2); // sha1 of "init"
 
         Path d2 = bigC(cwd, "D2");
         callMain(d2, "init");
@@ -229,8 +264,8 @@ public class TestGitlet {
         initial commit
 
          */
-        String R2_K = captureLog(d2, 1); // sha1 of "k"
-        String R2_INIT = captureLog(d2, 2); // sha1 of "init"
+        ///String R2_K = captureLog(d2, 1); // sha1 of "k"
+        //String R2_INIT = captureLog(d2, 2); // sha1 of "init"
 
         callMain(d2, "add-remote", "R1", "../D1/.gitlet");
         callMain(d2, "fetch", "R1", "master");
@@ -273,7 +308,7 @@ public class TestGitlet {
         ${DATE}
         initial commit
          */
-        String R2_H = captureLog(d2, 1); // sha1 of "Add h"
+        //String R2_H = captureLog(d2, 1); // sha1 of "Add h"
         callMain(d2, "push", "R1", "master");
         // cd to D1
 
@@ -296,5 +331,89 @@ public class TestGitlet {
         initial commit
 
          */
+    }
+
+    @Test
+    public void badRemotesErr() throws IOException {
+        Path cwd = createCwd("remoteFetchPush");
+        Path d1 = bigC(cwd, "D1");
+        setUp2(d1);
+
+        System.out.println("1st log:");
+        callMain(d1, "log");
+        /* 1st log
+        ${COMMIT_HEAD}
+        Two files
+
+        ===
+        ${COMMIT_HEAD}
+        initial commit
+
+        */
+        String R1_TWO = captureLog(d1, 1); // sha1 of "two"
+        //String R1_INIT = captureLog(d1, 2); // sha1 of "init"
+
+        Path d2 = bigC(cwd, "D2");
+        callMain(d2, "init");
+        plus(d2, "k.txt", "wug2.txt");
+        callMain(d2, "add", "k.txt");
+        callMain(d2, "commit", "Add k in repo 2");
+
+        System.out.println("2nd log:");
+        callMain(d2, "log");
+        /* 2nd log
+        ===
+        ${COMMIT_HEAD}
+        Add k in repo 2
+
+        ===
+        ${COMMIT_HEAD}
+        initial commit
+
+         */
+        ///String R2_K = captureLog(d2, 1); // sha1 of "k"
+        //String R2_INIT = captureLog(d2, 2); // sha1 of "init"
+
+        callMain(d2, "add-remote", "R1", "../Dx/.gitlet");
+
+        try {
+            callMain(d2, "add-remote", "R1", "../D1/.gitlet");
+        } catch (GitletException e) {
+            assertEquals("A remote with that name already exists.", e.getMessage());
+        }
+
+        try {
+            callMain(d2, "fetch", "R1", "master");
+        } catch (GitletException e) {
+            assertEquals("Remote directory not found.", e.getMessage());
+        }
+
+        try {
+            callMain(d2, "push", "R1", "master");
+        } catch (GitletException e) {
+            assertEquals("Remote directory not found.", e.getMessage());
+        }
+
+        callMain(d2, "rm-remote", "R1");
+
+        try {
+            callMain(d2, "rm-remote", "glorp");
+        } catch (GitletException e) {
+            assertEquals("A remote with that name does not exist.", e.getMessage());
+        }
+
+        callMain(d2, "add-remote", "R1", "../D1/.gitlet");
+
+        try {
+            callMain(d2, "fetch", "R1", "glorp");
+        } catch (GitletException e) {
+            assertEquals("That remote does not have that branch.", e.getMessage());
+        }
+
+        try {
+            callMain(d2, "push", "R1", "master");
+        } catch (GitletException e) {
+            assertEquals("Please pull down remote changes before pushing.", e.getMessage());
+        }
     }
 }
