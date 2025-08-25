@@ -6,17 +6,23 @@ import java.nio.file.Path;
 import java.util.Map;
 
 public class BlobManager {
+    /** The blob dir name. */
+    private final String blobDirName = "blobs";
     /** The blob directory. */
     private final Path BLOB_DIR;
 
     public BlobManager(Path gitletPath) {
-        this.BLOB_DIR = gitletPath.resolve("blobs");
+        this.BLOB_DIR = gitletPath.resolve(blobDirName);
     }
 
     Path getBlobPath() {
         return BLOB_DIR;
     }
+    String getBlobDirName() {
+        return blobDirName;
+    }
 
+    /** Writes blobs files from given path-hashString map to blob folder. */
     void writeBlob(Map<Path, String> fileMap) throws IOException {
         for (Map.Entry<Path, String> entry : fileMap.entrySet()) {
             Path sourceFile = entry.getKey();

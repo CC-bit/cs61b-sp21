@@ -7,8 +7,11 @@ public abstract class AbstractCommand implements Command {
     protected final WorkSpaceManager workSpaceManager;
     protected final BlobManager blobManager;
     protected final CommitManager commitManager;
+    protected final String commitDirName;
+    protected final String blobDirName;
     protected final StageManager stageManager;
     protected final BranchManager branchManager;
+    protected final RemoteManager remoteManager;
     protected final Path CWD;
     protected final Path GITLET_DIR;
     protected final Path BLOB_DIR;
@@ -22,10 +25,13 @@ public abstract class AbstractCommand implements Command {
         commitManager = repo.getCommitManager();
         stageManager = repo.getStageManager();
         branchManager = repo.getBranchManager();
-        CWD = workSpaceManager.getCWDPath();
+        remoteManager = repo.getRemoteManager();
+        this.CWD = workSpaceManager.getCWDPath();
         GITLET_DIR = repo.getGitletPath();
         BLOB_DIR = blobManager.getBlobPath();
         COMMIT_DIR = commitManager.getCommitsPath();
         STAGE_DIR = stageManager.getStagePath();
+        blobDirName = blobManager.getBlobDirName();
+        commitDirName = commitManager.getCommitDirName();
     }
 }

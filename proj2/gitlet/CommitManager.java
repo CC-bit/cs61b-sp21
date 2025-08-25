@@ -10,16 +10,21 @@ import static gitlet.Utils.plainFilenamesIn;
 import static gitlet.Utils.readObject;
 
 public class CommitManager {
+    /** The commit dir name. */
+    private final String commitDirName = "commits";
     /** The commit directory. */
     private final Path COMMIT_DIR;
     /** A map of commit id to commit instance. */
     private final TreeMap<String, Commit> commitCache = new TreeMap<>();
 
     public CommitManager(Path gitletPath) {
-        this.COMMIT_DIR = gitletPath.resolve("commits");
+        this.COMMIT_DIR = gitletPath.resolve(commitDirName);
     }
     Path getCommitsPath() {
         return COMMIT_DIR;
+    }
+    String getCommitDirName() {
+        return commitDirName;
     }
     void cacheCommit(String id, Commit commit) {
         commitCache.put(id, commit);

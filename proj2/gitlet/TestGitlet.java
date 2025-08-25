@@ -2,7 +2,10 @@ package gitlet;
 
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -28,6 +31,11 @@ public class TestGitlet {
             case "rm-branch": return new RmBranchCommand(repo);
             case "reset": return new ResetCommand(repo);
             case "merge": return new MergeCommand(repo);
+            case "add-remote": return new AddRemoteCommand(repo);
+            case "rm-remote": return new RmRemoteCommand(repo);
+            case "push": return new PushCommand(repo);
+            case "fetch": return new FetchCommand(repo);
+            case "pull": return new PullCommand(repo);
             default: throw new GitletException("No command with that name exists.");
         }
     }
@@ -137,7 +145,7 @@ public class TestGitlet {
                     e.getMessage());
         }
         callMain(cwd, "checkout", "b2");
-        eq(cwd,"f.txt", "wug.txt");
+        eq(cwd, "f.txt", "wug.txt");
         try {
             callMain(cwd, "merge", "master");
         } catch (GitletException e) {
@@ -146,5 +154,147 @@ public class TestGitlet {
                     e.getMessage());
         }
         star(cwd, "f.txt");
+    }
+
+    private Path bigC(Path cwd, String dir) throws IOException {
+        Path subDir = cwd.resolve(dir);
+        if (!Files.isDirectory(subDir)) {
+            Files.createDirectories(subDir);
+        }
+        return subDir;
+    }
+
+    private String captureLog(Path repoPath, int commitNum) throws IOException {
+        // set capture
+        PrintStream originalOut = System.out;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(baos, true, StandardCharsets.UTF_8));
+        // call "log"
+        callMain(repoPath, "log");
+        // process captured information
+        System.setOut(originalOut);
+        String capturedLog = baos.toString(StandardCharsets.UTF_8);
+
+        String hash = "";
+        int i = 1;
+        // process information line by line
+        String[] lines = capturedLog.split(System.lineSeparator());
+        for (String line : lines) {
+            if (line.contains("commit")) {
+                if (i == commitNum) {
+                    int index = line.indexOf(" ");
+                    hash = line.substring(index + 1);
+                }
+                i++;
+            }
+        }
+        return hash;
+    }
+
+    @Test
+    public void remoteFetchPush() throws IOException {
+        Path cwd = createCwd("remoteFetchPush");
+        Path d1 = bigC(cwd, "D1");
+        setUp2(d1);
+
+        System.out.println("1st log:");
+        callMain(d1, "log");
+        /* 1st log
+        ${COMMIT_HEAD}
+        Two files
+
+        ===
+        ${COMMIT_HEAD}
+        initial commit
+
+        */
+        String R1_TWO = captureLog(d1, 1); // sha1 of "two"
+        String R1_INIT = captureLog(d1, 2); // sha1 of "init"
+
+        Path d2 = bigC(cwd, "D2");
+        callMain(d2, "init");
+        plus(d2, "k.txt", "wug2.txt");
+        callMain(d2, "add", "k.txt");
+        callMain(d2, "commit", "Add k in repo 2");
+
+        System.out.println("2nd log:");
+        callMain(d2, "log");
+        /* 2nd log
+        ===
+        ${COMMIT_HEAD}
+        Add k in repo 2
+
+        ===
+        ${COMMIT_HEAD}
+        initial commit
+
+         */
+        String R2_K = captureLog(d2, 1); // sha1 of "k"
+        String R2_INIT = captureLog(d2, 2); // sha1 of "init"
+
+        callMain(d2, "add-remote", "R1", "../D1/.gitlet");
+        callMain(d2, "fetch", "R1", "master");
+        callMain(d2, "checkout", "R1/master");
+
+        System.out.println("3rd log:");
+        callMain(d2, "log");
+        /* 3rd log
+        ===
+        commit ${R1_TWO}
+        ${DATE}
+        Two files
+
+        ===
+        commit ${R1_INIT}
+        ${DATE}
+        initial commit
+
+         */
+        callMain(d2, "checkout", "master");
+        callMain(d2, "reset", R1_TWO);
+        plus(d2, "h.txt", "wug3.txt");
+        callMain(d2, "add", "h.txt");
+        callMain(d2, "commit", "Add h");
+
+        System.out.println("4th log:");
+        callMain(d2, "log");
+        /* 4th log
+        ===
+        ${COMMIT_HEAD}
+        Add h
+
+        ===
+        commit ${R1_TWO}
+        ${DATE}
+        Two files
+
+        ===
+        commit ${R1_INIT}
+        ${DATE}
+        initial commit
+         */
+        String R2_H = captureLog(d2, 1); // sha1 of "Add h"
+        callMain(d2, "push", "R1", "master");
+        // cd to D1
+
+        System.out.println("last log:");
+        callMain(d1, "log");
+        /* last log
+        ===
+        commit ${R2_H}
+        ${DATE}
+        Add h
+
+        ===
+        commit ${R1_TWO}
+        ${DATE}
+        Two files
+
+        ===
+        commit ${R1_INIT}
+        ${DATE}
+        initial commit
+
+         */
     }
 }

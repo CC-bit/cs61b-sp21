@@ -41,7 +41,7 @@ public class Commit implements Serializable {
         parentID = null;
         commitHash = calHash();
     }
-    /** Creates a commit node. */
+    /** Creates a commit node with single parent. */
     public Commit(Commit parent,
                   String msg, TreeMap<String, String> blobs) throws IOException {
         this.blobs = blobs;
@@ -50,11 +50,19 @@ public class Commit implements Serializable {
         parentID = parent.getID();
         commitHash = calHash();
     }
-    /** Creates a commit node. */
+    /** Creates a commit node with second parent. */
     public Commit(Commit parent, Commit secParent,
                   String msg, TreeMap<String, String> blobs) throws IOException {
         this(parent, msg, blobs);
         secondParentID = secParent.getID();
+        commitHash = calHash();
+    }
+    /** Creates a commit node from a remote commit. */
+    public Commit(Commit remoteCommit, Commit parent) {
+        blobs = remoteCommit.blobs;
+        timeStamp = remoteCommit.timeStamp;
+        message = remoteCommit.message;
+        parentID = parent.getID();
         commitHash = calHash();
     }
 
@@ -73,7 +81,7 @@ public class Commit implements Serializable {
     String getSecondParentID() {
         return secondParentID;
     }
-
+    /** Returns fileName-fileHash map of this commit blobs. */
     TreeMap<String, String> getBlobs() {
         // Shallow copy from String, safe.
         return new TreeMap<>(blobs);

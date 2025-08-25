@@ -43,6 +43,11 @@ public class Main {
             case "rm-branch": return new RmBranchCommand(repo);
             case "reset": return new ResetCommand(repo);
             case "merge": return new MergeCommand(repo);
+            case "add-remote": return new AddRemoteCommand(repo);
+            case "rm-remote": return new RmRemoteCommand(repo);
+            case "push": return new PushCommand(repo);
+            case "fetch": return new FetchCommand(repo);
+            case "pull": return new PullCommand(repo);
             default: throw new GitletException("No command with that name exists.");
         }
     }
