@@ -1,7 +1,6 @@
 package gitlet;
 
 import java.io.IOException;
-import java.nio.file.Path;
 
 public class AddRemoteCommand extends AbstractCommand {
 
