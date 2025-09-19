@@ -11,11 +11,12 @@ import java.util.*;
 import static gitlet.Utils.*;
 
 
-/** Represents a gitlet repository.
- *  It's a good idea to give a description here of what else this Class
- *  does at a high level.
+/**
+ * Represents a Gitlet repository,
+ * providing unified access to core components like {@link BlobManager} and {@link Commit}.
+ * Offers common helper methods to simplify command implementations and prevent code duplication.
  *
- *  @author dhzp
+ * @author ccBit
  */
 public class Repository {
     private final BlobManager blobManager;
@@ -64,8 +65,43 @@ public class Repository {
         return remoteManager;
     }
 
-    void switchBranch(String branchName, Commit br) throws IOException {
-        recoverFile(br);
+    /**
+     * Replaces a file in working directory with the version in the given commit.
+     * @param commit the commit which contains the file version to replace
+     * @param fileName the name of the file to be replaced
+     * @throws IOException if an I/O error occurs
+     */
+    void recoverFile(Commit commit, String fileName) throws IOException {
+        // get hash from commit, get filePath from hash
+        String fileHash = commit.getFileHash(fileName);
+        Path source = BLOB_DIR.resolve(fileHash.substring(0, 2))
+                .resolve(fileHash.substring(2));
+        workSpaceManager.writeCWD(source, fileName);
+    }
+
+    /**
+     * Set the file status in working directory to that of the given commit.
+     * <p>
+     * Clears the working directory.
+     * Takes all files in the given commit and puts them in the working directory.
+     * @param commit the commit to recover
+     * @throws IOException if an I/O error occurs
+     */
+    void recoverFile(Commit commit) throws IOException {
+        workSpaceManager.clearCWD();
+        for (Map.Entry<String, String> entry : commit.blobEntrySet()) {
+            recoverFile(commit, entry.getKey());
+        }
+    }
+
+    /**
+     *
+     * @param branchName
+     * @param branchHead
+     * @throws IOException
+     */
+    void switchBranch(String branchName, Commit branchHead) throws IOException {
+        recoverFile(branchHead);
         branchManager.createBranch("head", branchName);
         stageManager.clearStageAdd();
     }
@@ -97,21 +133,6 @@ public class Repository {
             id = branchManager.getBrCommitID(id);
         }
         return commitManager.readCommit(id);
-    }
-
-    void recoverFile(Commit commit, String fileName) throws IOException {
-        // get hash from commit, get filePath from hash
-        String fileHash = commit.getFileHash(fileName);
-        Path source = BLOB_DIR.resolve(fileHash.substring(0, 2))
-                .resolve(fileHash.substring(2));
-        workSpaceManager.writeCWD(source, fileName);
-    }
-
-    void recoverFile(Commit commit) throws IOException {
-        workSpaceManager.clearCWD();
-        for (Map.Entry<String, String> entry : commit.blobEntrySet()) {
-            recoverFile(commit, entry.getKey());
-        }
     }
 
     /** Check if CWD file tracked. */

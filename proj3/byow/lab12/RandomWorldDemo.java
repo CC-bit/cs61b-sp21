@@ -13,12 +13,12 @@ public class RandomWorldDemo {
     private static final int WIDTH = 50;
     private static final int HEIGHT = 50;
 
-    private static final long SEED = 2873123;
+    private static final long SEED = 2873;
     private static final Random RANDOM = new Random(SEED);
 
     /**
      * Fills the given 2D array of tiles with RANDOM tiles.
-     * @param tiles
+     * @param tiles 2D array of TETile object
      */
     public static void fillWithRandomTiles(TETile[][] tiles) {
         int height = tiles[0].length;
@@ -39,7 +39,6 @@ public class RandomWorldDemo {
         switch (tileNum) {
             case 0: return Tileset.WALL;
             case 1: return Tileset.FLOWER;
-            case 2: return Tileset.NOTHING;
             default: return Tileset.NOTHING;
         }
     }
