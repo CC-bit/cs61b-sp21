@@ -1,13 +1,11 @@
 package byow.Core;
 
-import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
 
+import java.util.Random;
+
 public class Engine {
-    TERenderer ter = new TERenderer();
-    /* Feel free to change the width and height. */
-    public static final int WIDTH = 80;
-    public static final int HEIGHT = 30;
+    public static Random random;
 
     /**
      * Method used for exploring a fresh world. This method should handle all inputs,
@@ -18,19 +16,19 @@ public class Engine {
 
     /**
      * Method used for autograding and testing your code. The input string will be a series
-     * of characters (for example, "n123sswwdasdassadwas", "n123sss:q", "lwww". The engine should
+     * of characters (for example, "n123sswwdasdassadwas", "n123sss:q", "lwww"). The engine should
      * behave exactly as if the user typed these characters into the engine using
      * interactWithKeyboard.
-     *
+     * <p>
      * Recall that strings ending in ":q" should cause the game to quite save. For example,
      * if we do interactWithInputString("n123sss:q"), we expect the game to run the first
      * 7 commands (n123sss) and then quit and save. If we then do
      * interactWithInputString("l"), we should be back in the exact same state.
-     *
+     * <p>
      * In other words, both of these calls:
      *   - interactWithInputString("n123sss:q")
      *   - interactWithInputString("lww")
-     *
+     * <p>
      * should yield the exact same world state as:
      *   - interactWithInputString("n123sssww")
      *
@@ -46,7 +44,20 @@ public class Engine {
         // See proj3.byow.InputDemo for a demo of how you can make a nice clean interface
         // that works for many different input types.
 
-        TETile[][] finalWorldFrame = null;
-        return finalWorldFrame;
+        int seed = Integer.parseInt(input.substring(1, input.length() - 1));
+        random = new Random(seed);
+        Floor floor = new Floor(1);
+        FloorManager floorManager = new FloorManager(floor);
+
+        int roomNumber = RandomUtils.uniform(
+                random, FloorManager.MIN_ROOM_NUM, FloorManager.MAX_ROOM_NUM);
+        for (int i = 0; i < roomNumber; i += 1) {
+            Room room = floorManager.addRoom();
+            floorManager.invalidateTilesForAnchor(room);
+        }
+
+        floorManager.linkAllRooms();
+
+        return floor.getFloor();
     }
 }
