@@ -14,7 +14,7 @@ import java.io.IOException;
  */
 public class Main {
     public static void main(String[] args)
-            throws InterruptedException, IOException, ClassNotFoundException {
+            throws IOException, ClassNotFoundException {
         if (args.length == 0) {
             startEngine();
         } else if (args.length > 2) {
@@ -31,10 +31,9 @@ public class Main {
     }
 
     private static void startEngine()
-            throws InterruptedException, IOException, ClassNotFoundException {
-        InputSource[] inputSources = new InputSource[] {
-                new KeyboardInputSource(), new MouseInputSource()
-        };
+            throws IOException, ClassNotFoundException {
+        InputSource[] inputSources = new InputSource[] {new KeyboardInputSource(),
+                new MouseInputSource()};
         Input input = new Input(inputSources);
 
         TERenderer ter = new TERenderer();

@@ -120,7 +120,7 @@ public class Engine {
     public static final String LOAD_MENU = "loadMnue";
     public static final String SAVE_MENU = "saveMnue";
     public static final String IN_GAMING = "inGaming";
-    public static boolean COMMAND_MODE = false;
+    private static boolean COMMAND_MODE = false;
     private String gameState = MAIN_MENU;
 
     public void mainLoop()
@@ -284,8 +284,7 @@ public class Engine {
      * @param input the input string to feed to your program
      * @return the 2D TETile[][] representing the state of the world
      */
-    public TETile[][] interactWithInputString(String input)
-            throws IOException, ClassNotFoundException {
+    public TETile[][] interactWithInputString(String input) {
         // TODO: Fill out this method so that it run the engine using the input
         // passed in as an argument, and return a 2D tile representation of the
         // world that would have been drawn if the same inputs had been given
@@ -301,7 +300,11 @@ public class Engine {
         for (int i = 0; i < input.length(); i += 1) {
             char c = input.charAt(i);
             Command command = new Command(c);
-            interactWithCommand(command);
+            try {
+                interactWithCommand(command);
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         return world.getCurrentFloor().getFloorTiles();
