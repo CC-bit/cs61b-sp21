@@ -18,6 +18,7 @@ public class Engine {
     private String seed = "";
     private World world;
 
+    public Engine() {}
     public Engine(Input doulInput, TERenderer ter) {
         this.doulInput = doulInput;
         this.ter = ter;
