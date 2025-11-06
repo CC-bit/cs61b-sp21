@@ -3,6 +3,7 @@ package byow.InputDemo;
 /**
  * Created by hug.
  */
+
 import edu.princeton.cs.introcs.StdDraw;
 
 public class KeyboardInputSource implements InputSource {
@@ -11,19 +12,12 @@ public class KeyboardInputSource implements InputSource {
         StdDraw.text(0.3, 0.3, "press m to moo, q to quit");
     }
 
-    public char getNextKey() {
-        while (true) {
-            if (StdDraw.hasNextKeyTyped()) {
-                char c = Character.toUpperCase(StdDraw.nextKeyTyped());
-                if (PRINT_TYPED_KEYS) {
-                    System.out.print(c);
-                }
-                return c;
-            }
-        }
+    public Command getNextInput() {
+        return new Command(Character.toUpperCase(StdDraw.nextKeyTyped()));
     }
 
-    public boolean possibleNextInput() {
-        return true;
+    public boolean hasNextInput() {
+        return StdDraw.hasNextKeyTyped();
     }
+
 }

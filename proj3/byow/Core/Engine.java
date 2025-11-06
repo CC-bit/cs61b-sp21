@@ -1,17 +1,252 @@
 package byow.Core;
 
+import byow.InputDemo.Command;
+import byow.InputDemo.Input;
+import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
+import edu.princeton.cs.introcs.StdDraw;
 
+import java.awt.*;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Random;
 
 public class Engine {
-    public static Random random;
+    private TERenderer ter;
+    private Input doulInput;
+    private String seed = "";
+    private World world;
+
+    public Engine(Input doulInput, TERenderer ter) {
+        this.doulInput = doulInput;
+        this.ter = ter;
+
+        if (Files.exists(saveInfoPath)) {
+            isSlotOccupied = loadObject(boolean[].class, saveInfoPath);
+        } else {
+            isSlotOccupied = new boolean[MAX_SAVE_SLOTS + 1];
+        }
+    }
+
+    private final Path saveFolderPath = Path.of(System.getProperty("user.dir"), "save");
+    private final Path saveInfoPath = saveFolderPath.resolve("saveInfo");
+    private final String saveFile = "save";
+    public static final int MAX_SAVE_SLOTS = 5;
+    private static boolean[] isSlotOccupied;
+    private static int selectedSlot;
+
+    public static boolean isSlotOccupied(int index) {
+        return isSlotOccupied[index];
+    }
+    public static int getSelectedSlot() {
+        return selectedSlot;
+    }
+
+    private void saveObject(Object obj, Path file) throws IOException {
+        Path parentDir = file.getParent();
+
+        if (parentDir != null && !Files.exists(parentDir)) {
+            Files.createDirectories(parentDir);
+        }
+
+        try (OutputStream fos = Files.newOutputStream(file);
+             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+
+            oos.writeObject(obj);
+        }
+    }
+
+    private void save(int i) throws IOException {
+        if (!Files.exists(saveFolderPath)) {
+            Files.createDirectories(saveFolderPath);
+        }
+
+        Path newSave = saveFolderPath.resolve("save" + i);
+
+        saveObject(new GameData(seed, world), newSave.resolve(saveFile));
+
+        isSlotOccupied[i] = true;
+        saveObject(isSlotOccupied, saveInfoPath);
+    }
+
+    /**
+     * Reads an object from file.
+     *
+     * @param file file path
+     * @param clazz expected class
+     * @return the expected object; null if failure
+     */
+    public <T> T loadObject(Class<T> clazz, Path file) {
+        T loadedObject = null;
+
+        try (InputStream fis = Files.newInputStream(file);
+             ObjectInputStream ois = new ObjectInputStream(fis)) {
+
+            Object rawObject = ois.readObject();
+            loadedObject = clazz.cast(rawObject);
+
+        } catch (ClassNotFoundException | ClassCastException | IOException e) {
+            System.err.println(e.getMessage());
+        }
+
+        return loadedObject;
+    }
+
+    private void load(int slotNum) {
+        Path saveSlot = saveFolderPath.resolve("save" + slotNum);
+        GameData gameData = loadObject(GameData.class, saveSlot.resolve(saveFile));
+        this.seed = gameData.getSeed();
+        this.world = gameData.getWorld();
+    }
+
+    /** Game state. */
+    public static final String MAIN_MENU = "mainMnue";
+    public static final String SEED_TYPING = "seedtyping";
+    public static final String LOAD_MENU = "loadMnue";
+    public static final String SAVE_MENU = "saveMnue";
+    public static final String IN_GAMING = "inGaming";
+    public static boolean COMMAND_MODE = false;
+    private String gameState = MAIN_MENU;
+
+    public void mainLoop()
+            throws IOException, ClassNotFoundException {
+        ter.initialize(World.FLOOR_WIDTH, World.FLOOR_HEIGHT + TERenderer.HUDheight,
+                0, TERenderer.HUDheight);
+        ter.render(MAIN_MENU, null, null);
+        while (true) {
+            if (doulInput.hasNextInput()) {
+                Command command = doulInput.getNextInput();
+                interactWithCommand(command);
+                ter.render(gameState, seed, world);
+            }
+            StdDraw.pause(16);
+        }
+    }
+
+    /** Prompts a message for 1 second. */
+    private void prompt(String msg) {
+        double w = World.FLOOR_WIDTH;
+        double h = World.FLOOR_HEIGHT;
+        StdDraw.setPenColor(Color.black);
+        StdDraw.filledRectangle(w / 2, h / 2, w / 2, 2);
+
+        StdDraw.setPenColor(Color.white);
+        StdDraw.text(w / 2, h / 2, msg);
+
+        StdDraw.show();
+        StdDraw.pause(1000);
+        doulInput.clearInputs();
+    }
 
     /**
      * Method used for exploring a fresh world. This method should handle all inputs,
      * including inputs from the main menu.
      */
-    public void interactWithKeyboard() {
+    public void interactWithCommand(Command command)
+            throws IOException, ClassNotFoundException {
+        String commandType = command.getType();
+        if (gameState.equals(MAIN_MENU)) {
+            if (commandType.equals(Command.KEYBOARD)) {
+                char key = command.getKey();
+                if (key == 'N') {
+                    gameState = SEED_TYPING;
+                } else if (key == 'L') {
+                    gameState = LOAD_MENU;
+                } else if (key == 'Q') {
+                    System.exit(0);
+                }
+            }
+        } else if (gameState.equals(SEED_TYPING)) {
+            if (commandType.equals(Command.KEYBOARD)) {
+                char key = command.getKey();
+                if (Character.isDigit(key)) {
+                    seed += key;
+                } else if (key == 'S' && !seed.isEmpty()) {
+                    world = new World(new Random(Long.parseLong(seed)));
+                    gameState = IN_GAMING;
+                } else if (key == 'N') {
+                    seed = null;
+                    gameState = SEED_TYPING;
+                } else if (key == 'Q') {
+                    seed = null;
+                    gameState = MAIN_MENU;
+                }
+            }
+        } else if (gameState.equals(LOAD_MENU)) {
+            if (commandType.equals(Command.KEYBOARD)) {
+                char key = command.getKey();
+                if (key == 'W') {
+                    if (selectedSlot == 0) {
+                        selectedSlot = MAX_SAVE_SLOTS;
+                    } else {
+                        selectedSlot -= 1;
+                    }
+                } else if (key == 'S') {
+                    if (selectedSlot == MAX_SAVE_SLOTS) {
+                        selectedSlot = 0;
+                    } else {
+                        selectedSlot += 1;
+                    }
+                } else if (key == 'F') {
+                    if (isSlotOccupied[selectedSlot]) {
+                        load(selectedSlot);
+                        gameState = IN_GAMING;
+                    } else {
+                        prompt("Empty slot, please select another.");
+                    }
+                } else if (key == 'Q') {
+                    gameState = MAIN_MENU;
+                }
+
+            } else if (commandType.equals(Command.MOUSE)) {
+
+            }
+        } else if (gameState.equals(SAVE_MENU)) {
+            if (commandType.equals(Command.KEYBOARD)) {
+                char key = command.getKey();
+                if (key == 'W') {
+                    if (selectedSlot == 1) {
+                        selectedSlot = MAX_SAVE_SLOTS;
+                    } else {
+                        selectedSlot -= 1;
+                    }
+                } else if (key == 'S') {
+                    if (selectedSlot == MAX_SAVE_SLOTS) {
+                        selectedSlot = 1;
+                    } else {
+                        selectedSlot += 1;
+                    }
+                } else if (key == 'F') {
+                    save(selectedSlot);
+                    gameState = MAIN_MENU;
+                } else if (key == 'Q') {
+                    System.exit(0);
+                }
+
+            } else if (commandType.equals(Command.MOUSE)) {
+
+            }
+        } else if (gameState.equals(IN_GAMING)) {
+            if (commandType.equals(Command.KEYBOARD)) {
+                char key = command.getKey();
+                if (COMMAND_MODE && key == 'Q') {
+                    COMMAND_MODE = false;
+                    save(0);
+                    System.exit(0);
+                }
+                if (key == 'W' || key == 'A' || key == 'S' || key == 'D') {
+                    world.moveAvatar(key);
+                } else if (key == ':') {
+                    COMMAND_MODE = true;
+                } else if (key == 'Q') {
+                    gameState = SAVE_MENU;
+                }
+
+            } else if (commandType.equals(Command.MOUSE)) {
+
+            }
+        }
     }
 
     /**
@@ -35,7 +270,8 @@ public class Engine {
      * @param input the input string to feed to your program
      * @return the 2D TETile[][] representing the state of the world
      */
-    public TETile[][] interactWithInputString(String input) {
+    public TETile[][] interactWithInputString(String input)
+            throws IOException, ClassNotFoundException {
         // TODO: Fill out this method so that it run the engine using the input
         // passed in as an argument, and return a 2D tile representation of the
         // world that would have been drawn if the same inputs had been given
@@ -44,20 +280,16 @@ public class Engine {
         // See proj3.byow.InputDemo for a demo of how you can make a nice clean interface
         // that works for many different input types.
 
-        long seed = Long.parseLong(input.substring(1, input.length() - 1));
-        random = new Random(seed);
-        Floor floor = new Floor(1);
-        FloorManager floorManager = new FloorManager(floor);
+        ter.initialize(World.FLOOR_WIDTH, World.FLOOR_HEIGHT + TERenderer.HUDheight,
+                0, TERenderer.HUDheight);
+        ter.render(MAIN_MENU, null, null);
 
-        int roomNumber = RandomUtils.uniform(
-                random, FloorManager.MIN_ROOM_NUM, FloorManager.MAX_ROOM_NUM);
-        for (int i = 0; i < roomNumber; i += 1) {
-            Room room = floorManager.addRoom();
-            floorManager.invalidateTilesForAnchor(room);
+        for (int i = 0; i < input.length(); i += 1) {
+            char c = input.charAt(i);
+            Command command = new Command(c);
+            interactWithCommand(command);
         }
 
-        floorManager.linkAllRooms();
-
-        return floor.getFloor();
+        return world.getCurrentFloor().getFloorTiles();
     }
 }

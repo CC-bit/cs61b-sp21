@@ -1,9 +1,10 @@
 package byow.TileEngine;
 
+import byow.Core.Engine;
+import byow.Core.World;
 import edu.princeton.cs.introcs.StdDraw;
 
-import java.awt.Color;
-import java.awt.Font;
+import java.awt.*;
 
 /**
  * Utility class for rendering tiles. You do not need to modify this file. You're welcome
@@ -15,6 +16,7 @@ public class TERenderer {
     private static final int TILE_SIZE = 16;
     private int width;
     private int height;
+    public static final int HUDheight = 4;
     private int xOffset;
     private int yOffset;
 
@@ -34,6 +36,7 @@ public class TERenderer {
         this.yOffset = yOff;
         StdDraw.setCanvasSize(width * TILE_SIZE, height * TILE_SIZE);
         Font font = new Font("Monaco", Font.BOLD, TILE_SIZE - 2);
+        StdDraw.setPenColor(Color.white);
         StdDraw.setFont(font);      
         StdDraw.setXscale(0, width);
         StdDraw.setYscale(0, height);
@@ -83,7 +86,7 @@ public class TERenderer {
      * the screen in tiles.
      * @param world the 2D TETile[][] array to render
      */
-    public void renderFrame(TETile[][] world) {
+    public void renderWorld(TETile[][] world) {
         int numXTiles = world.length;
         int numYTiles = world[0].length;
         StdDraw.clear(new Color(0, 0, 0));
@@ -96,6 +99,89 @@ public class TERenderer {
                 world[x][y].draw(x + xOffset, y + yOffset);
             }
         }
+    }
+
+    private final String gameName = "THE DUNGEON";
+    private final String newGameString = "New Game (N)";
+    private final String loadGameString = "Load Game (L)";
+    private final String quitGameString = "Quit (Q)";
+
+    private void renderMainMenu() {
+        StdDraw.clear(Color.BLACK);
+
+        StdDraw.text((double) width / 2, height - 2, gameName);
+        StdDraw.text((double) width / 2, (double) height / 2 + 2, newGameString);
+        StdDraw.text((double) width / 2, (double) height / 2, loadGameString);
+        StdDraw.text((double) width / 2, (double) height / 2 - 2, quitGameString);
+    }
+
+    private void renderSeed(String seed) {
+        StdDraw.clear(Color.BLACK);
+
+        StdDraw.text((double) width / 2, height - 2,
+                "Please enter the seed number.");
+        StdDraw.text((double) width / 2, height - 4,
+                "Press 'S' to end, 'N' to re-enter.");
+        StdDraw.text((double) width / 2, (double) height / 2 + 2, seed);
+    }
+
+    private void renderSLMenu() {
+        StdDraw.clear(Color.BLACK);
+
+        for (int i = 0; i <= Engine.MAX_SAVE_SLOTS; i += 1) {
+            String p = "";
+            if (i == Engine.getSelectedSlot()) {
+                p = "--->";
+            }
+
+            String m = "save" + i;
+            if (i == 0) {
+                m = "AutoSave";
+            }
+
+            String n = "(Empty)";
+            if (Engine.isSlotOccupied(i)) {
+                n = "";
+            }
+
+            StdDraw.text((double) width / 2, (double) height / 2 - 3 - i, p + m + n);
+        }
+    }
+
+    private void renderHUD(String hint1, String hint2) {
+        StdDraw.setPenColor(Color.white);
+        StdDraw.line(0, HUDheight, width, HUDheight);
+        StdDraw.textLeft(1, (double) HUDheight / 4, hint2);
+        StdDraw.textLeft(1, (double) HUDheight / 2, hint1);
+    }
+
+    public void render(String gameState, String seed, World world) {
+        String hint1, hint2;
+        switch (gameState) {
+            case Engine.MAIN_MENU -> renderMainMenu();
+            case Engine.SEED_TYPING -> renderSeed(seed);
+            case Engine.IN_GAMING -> {
+                renderWorld(world.getCurrentFloor().getFloorTiles());
+                int floorNum = world.getCurrentFloor().getFloorNumber();
+                hint2 = "--- Floor: " + floorNum
+                        + " ---" + "    Move(W/A/S/D)" + "    Save&Quit(Q)";
+                hint1 = "";
+                renderHUD(hint1, hint2);
+            }
+            case Engine.LOAD_MENU ->  {
+                renderSLMenu();
+                hint2 = "Press W/S to select a slot, F to confirm, Q to last menu.";
+                hint1 = "LOAD GAME";
+                renderHUD(hint1, hint2);
+            }
+            case Engine.SAVE_MENU ->  {
+                renderSLMenu();
+                hint2 = "Press W/S to select a slot, F to confirm, Q to quit without save.";
+                hint1 = "SAVE GAME";
+                renderHUD(hint1, hint2);
+            }
+        }
+
         StdDraw.show();
     }
 }

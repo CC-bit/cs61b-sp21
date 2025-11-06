@@ -115,7 +115,7 @@ public class HexWorld {
 
         TERenderer ter = new TERenderer();
         ter.initialize(world.WORLD_SIZE, world.WORLD_SIZE);
-        ter.renderFrame(world.tiles);
+        ter.renderWorld(world.tiles);
     }
 
 }

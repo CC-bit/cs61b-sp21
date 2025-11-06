@@ -4,7 +4,9 @@ import byow.Core.RandomUtils;
 import edu.princeton.cs.introcs.StdDraw;
 
 import java.awt.*;
+import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Random;
 
 /**
@@ -13,15 +15,15 @@ import java.util.Random;
  *
  * All TETile objects must have a character, textcolor, and background color to be used to represent
  * the tile when drawn to the screen. You can also optionally provide a path to an image file of an
- * appropriate size (16x16) to be drawn in place of the unicode representation. If the image path
- * provided cannot be found, draw will fallback to using the provided character and color
+ * appropriate size (16x16) to be drawn in place of the Unicode representation. If the image path
+ * provided cannot be found, draw will fall back to using the provided character and color
  * representation, so you are free to use image tiles on your own computer.
  *
  * The provided TETile is immutable, i.e. none of its instance variables can change. You are welcome
  * to make your TETile class mutable, if you prefer.
  */
 
-public class TETile {
+public class TETile implements Serializable {
     private final char character; // Do not rename character or the autograder will break.
     private final Color textColor;
     private final Color backgroundColor;
@@ -138,7 +140,7 @@ public class TETile {
     private static int newColorValue(int v, int dv, Random r) {
         int rawNewValue = v + RandomUtils.uniform(r, -dv, dv + 1);
 
-        // make sure value doesn't fall outside of the range 0 to 255.
+        // make sure value doesn't fall outside the range 0 to 255.
         int newValue = Math.min(255, Math.max(0, rawNewValue));
         return newValue;
     }
@@ -188,5 +190,24 @@ public class TETile {
         }
 
         return copy;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || o.getClass() != TETile.class) {
+            return false;
+        }
+
+        TETile obj = (TETile) o;
+        return this.character == obj.character &&
+                this.description.equals(obj.description);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(character, description);
     }
 }

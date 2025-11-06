@@ -25,13 +25,13 @@ public class DemoInputSource {
 
         int totalCharacters = 0;
 
-        while (inputSource.possibleNextInput()) {
+        while (inputSource.hasNextInput()) {
             totalCharacters += 1;
-            char c = inputSource.getNextKey();
-            if (c == 'M') {
+            Command command = inputSource.getNextInput();
+            if (command.getKey() == 'M') {
                 System.out.println("moo");
             }
-            if (c == 'Q') {
+            if (command.getKey() == 'Q') {
                 System.out.println("done.");
                 break;
             }

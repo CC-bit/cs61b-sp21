@@ -1,7 +1,5 @@
 package byow.InputDemo;
 
-import edu.princeton.cs.introcs.StdDraw;
-
 import java.util.Random;
 
 /**
@@ -15,11 +13,16 @@ public class RandomInputSource implements InputSource {
     }
 
     /** Returns a random letter between a and z.*/
-    public char getNextKey() {
-        return (char) (r.nextInt(26) + 'A');
+    public Command getNextInput() {
+        return new Command((char) (r.nextInt(26) + 'A'));
     }
 
-    public boolean possibleNextInput() {
+    public boolean hasNextInput() {
         return true;
+    }
+
+    @Override
+    public void clear() {
+        return;
     }
 }

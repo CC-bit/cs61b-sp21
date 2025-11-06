@@ -4,7 +4,7 @@ package byow.InputDemo;
  * Created by hug.
  */
 public class StringInputDevice implements InputSource  {
-    private String input;
+    private final String input;
     private int index;
 
     public StringInputDevice(String s) {
@@ -12,13 +12,13 @@ public class StringInputDevice implements InputSource  {
         input = s;
     }
 
-    public char getNextKey() {
+    public Command getNextInput() {
         char returnChar = input.charAt(index);
         index += 1;
-        return returnChar;
+        return new Command(returnChar);
     }
 
-    public boolean possibleNextInput() {
+    public boolean hasNextInput() {
         return index < input.length();
     }
 }

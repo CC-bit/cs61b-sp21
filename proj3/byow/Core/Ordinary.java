@@ -1,14 +1,17 @@
 package byow.Core;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class Ordinary {
+public class Ordinary implements Serializable {
     private final int x;
     private final int y;
+    private final int z;
 
-    public Ordinary(int x, int y) {
+    public Ordinary(int x, int y, int z) {
         this.x = x;
         this.y = y;
+        this.z = z;
     }
 
     public int getX() {
@@ -16,6 +19,9 @@ public class Ordinary {
     }
     public int getY() {
         return y;
+    }
+    public int getZ() {
+        return z;
     }
 
     @Override
@@ -27,7 +33,7 @@ public class Ordinary {
             return false;
         }
         Ordinary ordinary = (Ordinary) obj;
-        return ordinary.getX() == x && ordinary.getY() == y;
+        return ordinary.getX() == x && ordinary.getY() == y && ordinary.getZ() == z;
     }
 
     @Override
