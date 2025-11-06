@@ -1,7 +1,6 @@
 package byow.Core;
 
-import byow.InputDemo.Command;
-import byow.InputDemo.Input;
+import byow.InputDemo.*;
 import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
 import edu.princeton.cs.introcs.StdDraw;
@@ -18,7 +17,21 @@ public class Engine {
     private String seed = "";
     private World world;
 
-    public Engine() {}
+    public Engine() {
+        InputSource[] inputSources = new InputSource[] {
+                new KeyboardInputSource(), new MouseInputSource()
+        };
+        doulInput = new Input(inputSources);
+
+        ter = new TERenderer();
+
+        if (Files.exists(saveInfoPath)) {
+            isSlotOccupied = loadObject(boolean[].class, saveInfoPath);
+        } else {
+            isSlotOccupied = new boolean[MAX_SAVE_SLOTS + 1];
+        }
+
+    }
     public Engine(Input doulInput, TERenderer ter) {
         this.doulInput = doulInput;
         this.ter = ter;
