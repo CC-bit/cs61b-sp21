@@ -22,10 +22,17 @@ public class Engine {
     public Engine(Input doulInput, TERenderer ter) {
         this.doulInput = doulInput;
         this.ter = ter;
+        //saveinfo file check
+        if (Files.exists(saveInfoPath)) {
+            isSlotOccupied = loadObject(boolean[].class, saveInfoPath);
+        } else {
+            isSlotOccupied = new boolean[MAX_SAVE_SLOTS + 1];
+        }
+
     }
 
     public static final Path saveFolderPath = Path.of(System.getProperty("user.dir"), "save");
-    private final Path saveInfoPath = saveFolderPath.resolve("saveInfo");
+    public Path saveInfoPath = saveFolderPath.resolve("saveInfo");
     private final String saveFile = "save";
     public static final int MAX_SAVE_SLOTS = 5;
     private static boolean[] isSlotOccupied;
@@ -47,7 +54,7 @@ public class Engine {
     }
 
     private void save(int i) throws IOException {
-        Path newSave = saveFolderPath.resolve(saveFile + i);
+        Path newSave = saveFolderPath.resolve(saveFile + i +".txt");
 
         saveObject(new GameData(seed, world), newSave);
 
@@ -79,7 +86,7 @@ public class Engine {
     }
 
     private void load(int slotNum) {
-        Path saveFile = saveFolderPath.resolve(this.saveFile + slotNum);
+        Path saveFile = saveFolderPath.resolve(this.saveFile + slotNum + ".txt");
         GameData gameData = loadObject(GameData.class, saveFile);
         this.seed = gameData.getSeed();
         this.world = gameData.getWorld();
@@ -140,7 +147,7 @@ public class Engine {
                 } else if (key == 'L') {
                     if (isAutograderMode()) {
                         GameData gameData = loadObject(GameData.class,
-                                saveFolderPath.resolve(saveFile + 0));
+                                saveFolderPath.resolve(saveFile + 0 + ".txt"));
                         if (gameData != null) {
                             this.seed = gameData.getSeed();
                             this.world = gameData.getWorld();
@@ -149,13 +156,6 @@ public class Engine {
                             System.exit(1);
                         }
                     } else {
-                        //saveinfo file check
-                        if (Files.exists(saveInfoPath)) {
-                            isSlotOccupied = loadObject(boolean[].class, saveInfoPath);
-                        } else {
-                            isSlotOccupied = new boolean[MAX_SAVE_SLOTS + 1];
-                        }
-
                         if (isSlotOccupied[0]) {
                             load(0);
                             gameState = IN_GAMING;
@@ -253,7 +253,7 @@ public class Engine {
                     if (isAutograderMode()) {
                         try {
                             saveObject(new GameData(seed, world),
-                                    saveFolderPath.resolve(saveFile + 0));
+                                    saveFolderPath.resolve(saveFile + 0 + ".txt"));
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
