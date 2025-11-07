@@ -18,21 +18,10 @@ public class Engine {
     private World world;
 
     public Engine() {
-        if (Files.exists(saveInfoPath)) {
-            isSlotOccupied = loadObject(boolean[].class, saveInfoPath);
-        } else {
-            isSlotOccupied = new boolean[MAX_SAVE_SLOTS + 1];
-        }
     }
     public Engine(Input doulInput, TERenderer ter) {
         this.doulInput = doulInput;
         this.ter = ter;
-
-        if (Files.exists(saveInfoPath)) {
-            isSlotOccupied = loadObject(boolean[].class, saveInfoPath);
-        } else {
-            isSlotOccupied = new boolean[MAX_SAVE_SLOTS + 1];
-        }
     }
 
     private final Path saveFolderPath = Path.of(System.getProperty("user.dir"), "save");
@@ -180,6 +169,13 @@ public class Engine {
                 }
             }
         } else if (gameState.equals(LOAD_MENU)) {
+            //saveinfo file check
+            if (Files.exists(saveInfoPath)) {
+                isSlotOccupied = loadObject(boolean[].class, saveInfoPath);
+            } else {
+                isSlotOccupied = new boolean[MAX_SAVE_SLOTS + 1];
+            }
+
             if (commandType.equals(Command.KEYBOARD)) {
                 char key = command.getKey();
                 if (key == 'W') {
