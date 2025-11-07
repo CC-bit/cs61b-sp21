@@ -84,6 +84,9 @@ public class Floor implements Serializable {
         int roomNumber = RandomUtils.uniform(
                 random, World.MIN_NUM_ROOM, World.MAX_NUM_ROOM);
         for (int i = 0; i < roomNumber; i += 1) {
+            if (spareSpace.isEmpty()) {
+                break;
+            }
             Room room = addRoom();
             invalidateTilesForAnchor(room);
         }
