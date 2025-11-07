@@ -138,18 +138,30 @@ public class Engine {
                 if (key == 'N') {
                     gameState = SEED_TYPING;
                 } else if (key == 'L') {
-                    //saveinfo file check
-                    if (Files.exists(saveInfoPath)) {
-                        isSlotOccupied = loadObject(boolean[].class, saveInfoPath);
+                    if (isAutograderMode()) {
+                        GameData gameData = loadObject(GameData.class,
+                                saveFolderPath.resolve(saveFile + 0));
+                        if (gameData != null) {
+                            this.seed = gameData.getSeed();
+                            this.world = gameData.getWorld();
+                            gameState = IN_GAMING;
+                        } else {
+                            System.exit(1);
+                        }
                     } else {
-                        isSlotOccupied = new boolean[MAX_SAVE_SLOTS + 1];
-                    }
+                        //saveinfo file check
+                        if (Files.exists(saveInfoPath)) {
+                            isSlotOccupied = loadObject(boolean[].class, saveInfoPath);
+                        } else {
+                            isSlotOccupied = new boolean[MAX_SAVE_SLOTS + 1];
+                        }
 
-                    if (isSlotOccupied[0]) {
-                        load(0);
-                        gameState = IN_GAMING;
-                    } else {
-                        prompt("Empty slot, please select another.");
+                        if (isSlotOccupied[0]) {
+                            load(0);
+                            gameState = IN_GAMING;
+                        } else {
+                            prompt("Empty slot, please select another.");
+                        }
                     }
                 } else if (key == 'R') {
                     gameState = LOAD_MENU;
@@ -238,8 +250,17 @@ public class Engine {
                 char key = command.getKey();
                 if (COMMAND_MODE && key == 'Q') {
                     COMMAND_MODE = false;
-                    save(0);
-                    System.exit(0);
+                    if (isAutograderMode()) {
+                        try {
+                            saveObject(new GameData(seed, world),
+                                    saveFolderPath.resolve(saveFile + 0));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } else {
+                        save(0);
+                        System.exit(0);
+                    }
                 }
                 if (key == 'W' || key == 'A' || key == 'S' || key == 'D') {
                     world.moveAvatar(key);
@@ -253,6 +274,9 @@ public class Engine {
 
             }
         }
+    }
+    private boolean isAutograderMode() {
+        return this.ter == null;
     }
 
     /**
