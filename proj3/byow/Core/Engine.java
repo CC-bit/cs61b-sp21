@@ -41,9 +41,7 @@ public class Engine {
     private void saveObject(Object obj, Path file) throws IOException {
         Path parentDir = file.getParent();
 
-        if (parentDir != null && !Files.exists(parentDir)) {
-            Files.createDirectories(parentDir);
-        }
+        Files.createDirectories(parentDir);
 
         try (OutputStream fos = Files.newOutputStream(file);
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
