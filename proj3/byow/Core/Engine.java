@@ -32,6 +32,7 @@ public class Engine {
     }
 
     public static final Path saveFolderPath = Path.of(System.getProperty("user.dir"), "save");
+    private final Path saveFileForAG = Path.of("save.txt");
     public Path saveInfoPath = saveFolderPath.resolve("saveInfo");
     private final String saveFile = "save";
     public static final int MAX_SAVE_SLOTS = 5;
@@ -146,8 +147,7 @@ public class Engine {
                     gameState = SEED_TYPING;
                 } else if (key == 'L') {
                     if (isAutograderMode()) {
-                        GameData gameData = loadObject(GameData.class,
-                                saveFolderPath.resolve(saveFile + 0 + ".txt"));
+                        GameData gameData = loadObject(GameData.class, saveFileForAG);
                         if (gameData != null) {
                             this.seed = gameData.getSeed();
                             this.world = gameData.getWorld();
@@ -252,8 +252,7 @@ public class Engine {
                     COMMAND_MODE = false;
                     if (isAutograderMode()) {
                         try {
-                            saveObject(new GameData(seed, world),
-                                    saveFolderPath.resolve(saveFile + 0 + ".txt"));
+                            saveObject(new GameData(seed, world), saveFileForAG);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
