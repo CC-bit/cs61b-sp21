@@ -138,6 +138,20 @@ public class Engine {
                 if (key == 'N') {
                     gameState = SEED_TYPING;
                 } else if (key == 'L') {
+                    //saveinfo file check
+                    if (Files.exists(saveInfoPath)) {
+                        isSlotOccupied = loadObject(boolean[].class, saveInfoPath);
+                    } else {
+                        isSlotOccupied = new boolean[MAX_SAVE_SLOTS + 1];
+                    }
+
+                    if (isSlotOccupied[0]) {
+                        load(0);
+                        gameState = IN_GAMING;
+                    } else {
+                        prompt("Empty slot, please select another.");
+                    }
+                } else if (key == 'R') {
                     gameState = LOAD_MENU;
                     //saveinfo file check
                     if (Files.exists(saveInfoPath)) {

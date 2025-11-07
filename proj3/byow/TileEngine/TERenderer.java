@@ -103,7 +103,8 @@ public class TERenderer {
 
     private final String gameName = "THE DUNGEON";
     private final String newGameString = "New Game (N)";
-    private final String loadGameString = "Load Game (L)";
+    private final String loadGameString = "Load Last Game (L)";
+    private final String loadMenuString = "Load Menu (R)";
     private final String quitGameString = "Quit (Q)";
 
     private void renderMainMenu() {
@@ -112,7 +113,8 @@ public class TERenderer {
         StdDraw.text((double) width / 2, height - 2, gameName);
         StdDraw.text((double) width / 2, (double) height / 2 + 2, newGameString);
         StdDraw.text((double) width / 2, (double) height / 2, loadGameString);
-        StdDraw.text((double) width / 2, (double) height / 2 - 2, quitGameString);
+        StdDraw.text((double) width / 2, (double) height / 2 - 2, loadMenuString);
+        StdDraw.text((double) width / 2, (double) height / 2 - 4, quitGameString);
     }
 
     private void renderSeed(String seed) {
