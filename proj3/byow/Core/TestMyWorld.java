@@ -1,5 +1,8 @@
 package byow.Core;
 
+import byow.TileEngine.TETile;
+import org.junit.Test;
+
 import java.util.Random;
 
 public class TestMyWorld {
@@ -13,5 +16,12 @@ public class TestMyWorld {
         double m = RandomUtils.uniform(random);
         System.out.println(m);
 
+    }
+
+    @Test
+    public void testInputString() {
+        Engine engine = new Engine();
+        String input = "n9087swsdawasd";
+        TETile[][] result = engine.interactWithInputString(input);
     }
 }

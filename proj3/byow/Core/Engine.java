@@ -18,19 +18,11 @@ public class Engine {
     private World world;
 
     public Engine() {
-        InputSource[] inputSources = new InputSource[] {
-                new KeyboardInputSource(), new MouseInputSource()
-        };
-        doulInput = new Input(inputSources);
-
-        ter = new TERenderer();
-
         if (Files.exists(saveInfoPath)) {
             isSlotOccupied = loadObject(boolean[].class, saveInfoPath);
         } else {
             isSlotOccupied = new boolean[MAX_SAVE_SLOTS + 1];
         }
-
     }
     public Engine(Input doulInput, TERenderer ter) {
         this.doulInput = doulInput;
@@ -292,11 +284,6 @@ public class Engine {
         //
         // See proj3.byow.InputDemo for a demo of how you can make a nice clean interface
         // that works for many different input types.
-
-        ter.initialize(World.FLOOR_WIDTH, World.FLOOR_HEIGHT + TERenderer.HUDheight,
-                0, TERenderer.HUDheight);
-        ter.render(MAIN_MENU, null, null);
-
         for (int i = 0; i < input.length(); i += 1) {
             char c = input.charAt(i);
             Command command = new Command(c);

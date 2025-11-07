@@ -15,7 +15,7 @@ public class Command {
     }
 
     public Command(char c) {
-        key = c;
+        key = Character.toUpperCase(c);
         type = KEYBOARD;
     }
 
