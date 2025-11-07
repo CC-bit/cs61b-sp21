@@ -7,6 +7,7 @@ import byow.InputDemo.MouseInputSource;
 import byow.TileEngine.TERenderer;
 
 import java.io.IOException;
+import java.nio.file.Files;
 
 /** This is the main entry point for the program. This class simply parses
  *  the command line inputs, and lets the byow.Core.Engine class take over
@@ -39,6 +40,10 @@ public class Main {
         TERenderer ter = new TERenderer();
 
         Engine engine = new Engine(input, ter);
+
+        if (!Files.exists(Engine.saveFolderPath)) {
+            Files.createDirectories(Engine.saveFolderPath);
+        }
 
         engine.mainLoop();
     }

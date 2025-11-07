@@ -24,7 +24,7 @@ public class Engine {
         this.ter = ter;
     }
 
-    private final Path saveFolderPath = Path.of(System.getProperty("user.dir"), "save");
+    public static final Path saveFolderPath = Path.of(System.getProperty("user.dir"), "save");
     private final Path saveInfoPath = saveFolderPath.resolve("saveInfo");
     private final String saveFile = "save";
     public static final int MAX_SAVE_SLOTS = 5;
@@ -53,10 +53,6 @@ public class Engine {
     }
 
     private void save(int i) throws IOException {
-        if (!Files.exists(saveFolderPath)) {
-            Files.createDirectories(saveFolderPath);
-        }
-
         Path newSave = saveFolderPath.resolve("save" + i);
 
         saveObject(new GameData(seed, world), newSave.resolve(saveFile));
@@ -109,6 +105,7 @@ public class Engine {
         ter.initialize(World.FLOOR_WIDTH, World.FLOOR_HEIGHT + TERenderer.HUDheight,
                 0, TERenderer.HUDheight);
         ter.render(MAIN_MENU, null, null);
+
         while (true) {
             if (doulInput.hasNextInput()) {
                 Command command = doulInput.getNextInput();
@@ -148,6 +145,12 @@ public class Engine {
                     gameState = SEED_TYPING;
                 } else if (key == 'L') {
                     gameState = LOAD_MENU;
+                    //saveinfo file check
+                    if (Files.exists(saveInfoPath)) {
+                        isSlotOccupied = loadObject(boolean[].class, saveInfoPath);
+                    } else {
+                        isSlotOccupied = new boolean[MAX_SAVE_SLOTS + 1];
+                    }
                 } else if (key == 'Q') {
                     System.exit(0);
                 }
@@ -169,13 +172,6 @@ public class Engine {
                 }
             }
         } else if (gameState.equals(LOAD_MENU)) {
-            //saveinfo file check
-            if (Files.exists(saveInfoPath)) {
-                isSlotOccupied = loadObject(boolean[].class, saveInfoPath);
-            } else {
-                isSlotOccupied = new boolean[MAX_SAVE_SLOTS + 1];
-            }
-
             if (commandType.equals(Command.KEYBOARD)) {
                 char key = command.getKey();
                 if (key == 'W') {
