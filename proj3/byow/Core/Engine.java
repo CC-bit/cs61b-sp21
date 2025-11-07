@@ -39,10 +39,6 @@ public class Engine {
     }
 
     private void saveObject(Object obj, Path file) throws IOException {
-        Path parentDir = file.getParent();
-
-        Files.createDirectories(parentDir);
-
         try (OutputStream fos = Files.newOutputStream(file);
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
 
@@ -51,9 +47,9 @@ public class Engine {
     }
 
     private void save(int i) throws IOException {
-        Path newSave = saveFolderPath.resolve("save" + i);
+        Path newSave = saveFolderPath.resolve(saveFile + i);
 
-        saveObject(new GameData(seed, world), newSave.resolve(saveFile));
+        saveObject(new GameData(seed, world), newSave);
 
         isSlotOccupied[i] = true;
         saveObject(isSlotOccupied, saveInfoPath);
@@ -83,8 +79,8 @@ public class Engine {
     }
 
     private void load(int slotNum) {
-        Path saveSlot = saveFolderPath.resolve("save" + slotNum);
-        GameData gameData = loadObject(GameData.class, saveSlot.resolve(saveFile));
+        Path saveFile = saveFolderPath.resolve(this.saveFile + slotNum);
+        GameData gameData = loadObject(GameData.class, saveFile);
         this.seed = gameData.getSeed();
         this.world = gameData.getWorld();
     }
