@@ -31,9 +31,9 @@ public class Engine {
 
     }
 
-    public static final Path saveFolderPath = Path.of(System.getProperty("user.dir"), "save");
+    public static final Path SAVE_FLODER = Path.of(System.getProperty("user.dir"), "save");
     private final Path saveFileForAG = Path.of("save.txt");
-    public Path saveInfoPath = saveFolderPath.resolve("saveInfo");
+    private final Path saveInfoPath = SAVE_FLODER.resolve("saveInfo");
     private final String saveFile = "save";
     public static final int MAX_SAVE_SLOTS = 5;
     private static boolean[] isSlotOccupied;
@@ -55,7 +55,7 @@ public class Engine {
     }
 
     private void save(int i) throws IOException {
-        Path newSave = saveFolderPath.resolve(saveFile + i +".txt");
+        Path newSave = SAVE_FLODER.resolve(saveFile + i + ".txt");
 
         saveObject(new GameData(seed, world), newSave);
 
@@ -87,8 +87,8 @@ public class Engine {
     }
 
     private void load(int slotNum) {
-        Path saveFile = saveFolderPath.resolve(this.saveFile + slotNum + ".txt");
-        GameData gameData = loadObject(GameData.class, saveFile);
+        Path save = SAVE_FLODER.resolve(saveFile + slotNum + ".txt");
+        GameData gameData = loadObject(GameData.class, save);
         this.seed = gameData.getSeed();
         this.world = gameData.getWorld();
     }
@@ -300,13 +300,6 @@ public class Engine {
      * @return the 2D TETile[][] representing the state of the world
      */
     public TETile[][] interactWithInputString(String input) {
-        // TODO: Fill out this method so that it run the engine using the input
-        // passed in as an argument, and return a 2D tile representation of the
-        // world that would have been drawn if the same inputs had been given
-        // to interactWithKeyboard().
-        //
-        // See proj3.byow.InputDemo for a demo of how you can make a nice clean interface
-        // that works for many different input types.
         for (int i = 0; i < input.length(); i += 1) {
             char c = input.charAt(i);
             Command command = new Command(c);

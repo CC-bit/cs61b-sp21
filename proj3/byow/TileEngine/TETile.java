@@ -202,8 +202,8 @@ public class TETile implements Serializable {
         }
 
         TETile obj = (TETile) o;
-        return this.character == obj.character &&
-                this.description.equals(obj.description);
+        return this.character == obj.character
+                && this.description.equals(obj.description);
     }
 
     @Override

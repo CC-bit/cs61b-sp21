@@ -41,8 +41,8 @@ public class Main {
 
         Engine engine = new Engine(input, ter);
 
-        if (!Files.exists(Engine.saveFolderPath)) {
-            Files.createDirectories(Engine.saveFolderPath);
+        if (!Files.exists(Engine.SAVE_FLODER)) {
+            Files.createDirectories(Engine.SAVE_FLODER);
         }
 
         engine.mainLoop();
